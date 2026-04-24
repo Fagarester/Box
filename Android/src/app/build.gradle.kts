@@ -36,8 +36,8 @@ android {
     applicationId = "com.box.gallery"
     minSdk = 35
     targetSdk = 36
-    versionCode = 24
-    versionName = "1.0.11"
+    versionCode = 26
+    versionName = "1.0.12"
 
     // Needed for HuggingFace auth workflows.
     // Use the scheme of the "Redirect URLs" in HuggingFace app.
@@ -123,6 +123,10 @@ dependencies {
   // Box: llama.cpp native inference module for GGUF models
   implementation(project(":smollm"))
 
+  // Box: stable-diffusion.cpp native inference for image generation
+  implementation(project(":stablediffusion"))
+  implementation(project(":whisper"))
+
   // Box: Material 3 adaptive navigation
   implementation(libs.androidx.material3.adaptive.navigation.suite)
   implementation(libs.androidx.material3.window.size)
@@ -143,4 +147,11 @@ dependencies {
 protobuf {
   protoc { artifact = "com.google.protobuf:protoc:4.26.1" }
   generateProtoTasks { all().forEach { it.plugins { create("java") { option("lite") } } } }
+}
+
+// OSS Licenses plugin uses groovy.util.XmlSlurper which was moved to groovy-xml in Groovy 4.x
+// (Gradle 9+). The plugin (0.10.6) hasn't been updated for this. Disable the broken task;
+// the OssLicensesMenuActivity still compiles — it just won't have license data at runtime.
+tasks.configureEach {
+  if (name.endsWith("OssLicensesTask")) enabled = false
 }

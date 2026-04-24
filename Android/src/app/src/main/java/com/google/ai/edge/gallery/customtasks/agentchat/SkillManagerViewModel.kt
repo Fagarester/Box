@@ -24,14 +24,14 @@ import android.provider.OpenableColumns
 import android.util.Log
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Email
-import androidx.compose.material.icons.outlined.Kitchen
+import androidx.compose.material.icons.outlined.Savings
 import androidx.compose.material.icons.outlined.LocalLibrary
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.Password
 import androidx.compose.material.icons.outlined.QrCode
-import androidx.compose.material.icons.outlined.ScreenRotation
 import androidx.compose.material.icons.outlined.SentimentVerySatisfied
 import androidx.compose.material.icons.outlined.Tag
+import androidx.compose.material.icons.outlined.Translate
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -71,10 +71,10 @@ val TRYOUT_CHIPS: List<SkillTryOutChip> =
       skillName = "interactive-map",
     ),
     SkillTryOutChip(
-      icon = Icons.Outlined.Kitchen,
-      label = "Kitchen Adventure",
-      prompt = "Start kitchen adventure",
-      skillName = "kitchen-adventure",
+      icon = Icons.Outlined.Password,
+      label = "Password Generator",
+      prompt = "Generate a strong 20-character password with symbols",
+      skillName = "password-generator",
     ),
     SkillTryOutChip(
       icon = Icons.Outlined.Tag,
@@ -83,10 +83,16 @@ val TRYOUT_CHIPS: List<SkillTryOutChip> =
       skillName = "calculate-hash",
     ),
     SkillTryOutChip(
-      icon = Icons.Outlined.ScreenRotation,
-      label = "Text Spinner",
-      prompt = "Spin \"Gemma\" on my head",
-      skillName = "text-spinner",
+      icon = Icons.Outlined.Savings,
+      label = "Budget Tracker",
+      prompt = "Log $12 for coffee today and show my budget dashboard",
+      skillName = "budget-tracker",
+    ),
+    SkillTryOutChip(
+      icon = Icons.Outlined.Translate,
+      label = "Translator",
+      prompt = "Translate 'Good morning, how are you?' to Japanese",
+      skillName = "translator",
     ),
     SkillTryOutChip(
       icon = Icons.Outlined.Email,

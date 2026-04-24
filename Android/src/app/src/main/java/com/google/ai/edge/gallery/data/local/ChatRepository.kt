@@ -21,6 +21,8 @@ class ChatRepository @Inject constructor(
 
     fun getAllConversations(): Flow<List<Conversation>> = conversationDao.getAllConversations()
 
+    suspend fun getAllConversationsSync(): List<Conversation> = conversationDao.getAllConversationsSync()
+
     fun getConversationsByTask(taskType: String): Flow<List<Conversation>> =
         conversationDao.getConversationsByTask(taskType)
 
@@ -31,11 +33,13 @@ class ChatRepository @Inject constructor(
         title: String = "New Chat",
         taskType: String = "",
         modelName: String = "",
+        systemPrompt: String = "",
     ): Conversation {
         val conversation = Conversation(
             title = title,
             taskType = taskType,
             modelName = modelName,
+            systemPrompt = systemPrompt,
         )
         conversationDao.insert(conversation)
         return conversation

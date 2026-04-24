@@ -128,6 +128,7 @@ fun ChatPanel(
   showImagePicker: Boolean = false,
   showAudioPicker: Boolean = false,
   emptyStateComposable: @Composable (Model) -> Unit = {},
+  aboveInputComposable: @Composable (Model) -> Unit = {},
 ) {
   val uiState by viewModel.uiState.collectAsState()
   val modelManagerUiState by modelManagerViewModel.uiState.collectAsState()
@@ -149,19 +150,6 @@ fun ChatPanel(
         }
       }
       imageCount
-    }
-  val audioClipMesssageCountToLastconfigChange =
-    remember(messages) {
-      var audioClipMessageCount = 0
-      for (message in messages.reversed()) {
-        if (message is ChatMessageConfigValuesChange) {
-          break
-        }
-        if (message is ChatMessageAudioClip) {
-          audioClipMessageCount++
-        }
-      }
-      audioClipMessageCount
     }
 
   var curMessage by remember { mutableStateOf("") } // Correct state
@@ -565,6 +553,8 @@ fun ChatPanel(
         )
       }
 
+      aboveInputComposable(selectedModel)
+
       MessageInputText(
         task = task,
         modelManagerViewModel = modelManagerViewModel,
@@ -573,7 +563,7 @@ fun ChatPanel(
         isResettingSession = uiState.isResettingSession,
         modelPreparing = uiState.preparing,
         imageCount = imageCountToLastConfigChange,
-        audioClipMessageCount = audioClipMesssageCountToLastconfigChange,
+        audioClipMessageCount = 0,
         modelInitializing =
           modelInitializationStatus?.status == ModelInitializationStatusType.INITIALIZING,
         textFieldPlaceHolderRes = task.textInputPlaceHolderRes,
@@ -610,6 +600,7 @@ fun ChatPanel(
         showSkillsPicker = task.id === BuiltInTaskId.LLM_AGENT_CHAT,
         showImagePicker = selectedModel.llmSupportImage && showImagePicker,
         showAudioPicker = selectedModel.llmSupportAudio && showAudioPicker,
+        showDocumentPicker = task.id == BuiltInTaskId.LLM_CHAT,
         showStopButtonWhenInProgress = showStopButtonInInputWhenInProgress,
         onImageLimitExceeded = { showImageLimitBanner = true },
       )

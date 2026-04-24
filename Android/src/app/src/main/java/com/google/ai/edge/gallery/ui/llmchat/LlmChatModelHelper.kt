@@ -86,7 +86,7 @@ object LlmChatModelHelper : LlmModelHelper {
       when (visionAccelerator) {
         Accelerator.CPU.label -> Backend.CPU()
         Accelerator.GPU.label -> Backend.GPU()
-        Accelerator.NPU.label ->
+        Accelerator.NPU.label, Accelerator.TPU.label ->
           Backend.NPU(nativeLibraryDir = context.applicationInfo.nativeLibraryDir)
         else -> Backend.GPU()
       }
@@ -96,7 +96,7 @@ object LlmChatModelHelper : LlmModelHelper {
       when (accelerator) {
         Accelerator.CPU.label -> Backend.CPU()
         Accelerator.GPU.label -> Backend.GPU()
-        Accelerator.NPU.label ->
+        Accelerator.NPU.label, Accelerator.TPU.label ->
           Backend.NPU(nativeLibraryDir = context.applicationInfo.nativeLibraryDir)
         else -> Backend.CPU()
       }

@@ -520,6 +520,15 @@ fun SegmentedButtonRow(config: SegmentedButtonConfig, values: SnapshotStateMap<S
         )
       }
     }
+    val selectedLabel = config.options.filterIndexed { i, _ -> selectionStates[i] }.firstOrNull() ?: ""
+    if (selectedLabel.equals("NPU", ignoreCase = true)) {
+      Text(
+        "Experimental: requires NPU-capable hardware on this device",
+        color = MaterialTheme.colorScheme.error,
+        style = MaterialTheme.typography.bodySmall,
+        modifier = Modifier.padding(top = 4.dp),
+      )
+    }
   }
 }
 

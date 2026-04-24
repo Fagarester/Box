@@ -17,7 +17,7 @@
         "temperature": 1.0,
         "maxContextLength": 32000,
         "maxTokens": 4000,
-        "accelerators": "gpu,cpu",
+        "accelerators": "gpu,npu,cpu",
         "visionAccelerator": "gpu"
       },
       "taskTypes": [
@@ -52,7 +52,7 @@
         "temperature": 1.0,
         "maxContextLength": 32000,
         "maxTokens": 4000,
-        "accelerators": "gpu,cpu",
+        "accelerators": "gpu,npu,cpu",
         "visionAccelerator": "gpu"
       },
       "taskTypes": [
@@ -71,19 +71,37 @@
       ]
     },
     {
+      "name": "Gemma3-1B-IT",
+      "modelId": "litert-community/Gemma3-1B-IT",
+      "modelFile": "gemma3-1b-it-int4.litertlm",
+      "description": "A variant of [google/Gemma-3-1B-IT](https://huggingface.co/google/Gemma-3-1B-IT) with 4-bit quantization ready for deployment on Android using [LiteRT-LM](https://github.com/google-ai-edge/LiteRT-LM/blob/main/kotlin/README.md).",
+      "sizeInBytes": 584417280,
+      "minDeviceMemoryInGb": 6,
+      "commitHash": "42d538a932e8d5b12e6b3b455f5572560bd60b2c",
+      "defaultConfig": {
+        "topK": 64,
+        "topP": 0.95,
+        "temperature": 1.0,
+        "maxTokens": 1024,
+        "accelerators": "gpu,npu,cpu"
+      },
+      "taskTypes": ["llm_chat", "llm_prompt_lab"],
+      "bestForTaskTypes": ["llm_chat", "llm_prompt_lab"]
+    },
+    {
       "name": "Qwen2.5-1.5B-Instruct",
       "modelId": "litert-community/Qwen2.5-1.5B-Instruct",
       "modelFile": "Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm",
       "description": "A variant of [Qwen/Qwen2.5-1.5B-Instruct](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct) ready for deployment on Android using [LiteRT-LM](https://github.com/google-ai-edge/LiteRT-LM/blob/main/kotlin/README.md).",
       "sizeInBytes": 1597931520,
-      "minDeviceMemoryInGb": 6,
+      "minDeviceMemoryInGb": 4,
       "commitHash": "19edb84c69a0212f29a6ef17ba0d6f278b6a1614",
       "defaultConfig": {
         "topK": 20,
         "topP": 0.8,
         "temperature": 0.7,
         "maxTokens": 4096,
-        "accelerators": "gpu,cpu"
+        "accelerators": "gpu,npu,cpu"
       },
       "taskTypes": ["llm_chat", "llm_prompt_lab"]
     },
@@ -93,14 +111,14 @@
       "modelFile": "DeepSeek-R1-Distill-Qwen-1.5B_multi-prefill-seq_q8_ekv4096.litertlm",
       "description": "A variant of [deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B) ready for deployment on Android using [LiteRT-LM](https://github.com/google-ai-edge/LiteRT-LM/blob/main/kotlin/README.md).",
       "sizeInBytes": 1833451520,
-      "minDeviceMemoryInGb": 6,
+      "minDeviceMemoryInGb": 4,
       "commitHash": "e34bb88632342d1f9640bad579a45134eb1cf988",
       "defaultConfig": {
         "topK": 64,
         "topP": 0.95,
         "temperature": 1.0,
         "maxTokens": 4096,
-        "accelerators": "gpu,cpu"
+        "accelerators": "gpu,npu,cpu"
       },
       "taskTypes": ["llm_chat", "llm_prompt_lab"]
     },
@@ -110,7 +128,7 @@
       "modelFile": "tiny_garden_q8_ekv1024.litertlm",
       "description": "Fine-tuned Function Gemma 270M model for Tiny Garden.",
       "sizeInBytes": 288964608,
-      "minDeviceMemoryInGb": 6,
+      "minDeviceMemoryInGb": 4,
       "commitHash": "c205853ff82da86141a1105faa2344a8b176dfe7",
       "defaultConfig": {
         "topK": 64,
@@ -128,12 +146,13 @@
     },
     {
       "name": "MobileActions-270M",
-      "modelId": "litert-community/functiongemma-270m-ft-mobile-actions",
+      "modelId": "jegly/mobile_actions_q8_ekv1024.litertlm",
       "modelFile": "mobile_actions_q8_ekv1024.litertlm",
+      "url": "https://huggingface.co/jegly/mobile_actions_q8_ekv1024.litertlm/resolve/main/mobile_actions_q8_ekv1024.litertlm?download=true",
       "description": "Fine-tuned Function Gemma 270M model for Mobile Actions.",
       "sizeInBytes": 288964608,
-      "minDeviceMemoryInGb": 6,
-      "commitHash": "38942192c9b723af836d489074823ff33d4a3e7a",
+      "minDeviceMemoryInGb": 4,
+      "commitHash": "491f610",
       "defaultConfig": {
         "topK": 64,
         "topP": 0.95,

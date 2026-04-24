@@ -35,23 +35,39 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.core.animation.doOnEnd
 import androidx.core.net.toUri
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import com.google.ai.edge.gallery.security.AppLockManager
+import com.google.ai.edge.gallery.security.BiometricEncryptionManager
 import com.google.ai.edge.gallery.security.BiometricHelper
+import com.google.ai.edge.gallery.security.PassphraseHolder
 import com.google.ai.edge.gallery.security.SecurityAuditLog
 import com.google.ai.edge.gallery.ui.modelmanager.ModelManagerViewModel
 import com.google.ai.edge.gallery.ui.theme.GalleryTheme
@@ -73,15 +89,24 @@ class MainActivity : FragmentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
-    // Box: Security hardening — FLAG_SECURE prevents screenshots and screen recording
-    window.setFlags(
-      WindowManager.LayoutParams.FLAG_SECURE,
-      WindowManager.LayoutParams.FLAG_SECURE
-    )
-
-    // Box: Initialize biometric authentication and app lock
+    // Box: Initialize biometric authentication, app lock, and DB encryption
     biometricHelper = BiometricHelper(this)
     AppLockManager.init(this)
+    BiometricEncryptionManager.init(this)
+
+    // Box: Apply FLAG_SECURE based on user preference; observe for runtime changes.
+    lifecycleScope.launch {
+      AppLockManager.screenshotsEnabled.collect { enabled ->
+        if (enabled) {
+          window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        } else {
+          window.setFlags(
+            WindowManager.LayoutParams.FLAG_SECURE,
+            WindowManager.LayoutParams.FLAG_SECURE,
+          )
+        }
+      }
+    }
 
     SecurityAuditLog.log(this, "APP_LAUNCHED")
 
@@ -111,7 +136,14 @@ class MainActivity : FragmentActivity() {
       setContent {
         GalleryTheme {
           Surface(modifier = Modifier.fillMaxSize()) {
-            GalleryApp(modelManagerViewModel = modelManagerViewModel)
+            val dbEncEnabled by BiometricEncryptionManager.isEnabledFlow.collectAsState()
+            val dbDecrypted by PassphraseHolder.isSet.collectAsState()
+
+            if (dbEncEnabled && !dbDecrypted) {
+              DbLockedScreen(activity = this@MainActivity)
+            } else {
+              GalleryApp(modelManagerViewModel = modelManagerViewModel)
+            }
           }
         }
       }
@@ -163,8 +195,7 @@ class MainActivity : FragmentActivity() {
   override fun onResume() {
     super.onResume()
 
-    // Box: Biometric auth is optional — only prompt once per app session,
-    // and only if the user has opted in via Settings.
+    // Box: Biometric app lock — prompt once per session if opted in.
     if (AppLockManager.isBiometricLockEnabled() && !isAuthenticated &&
         biometricHelper.canAuthenticate() == BiometricHelper.BiometricStatus.AVAILABLE) {
       biometricHelper.authenticate(
@@ -178,15 +209,83 @@ class MainActivity : FragmentActivity() {
           if (errorCode != 10 && errorCode != 13) {
             SecurityAuditLog.log(this, "APP_RESUME_AUTH_ERROR: $errorCode")
           }
-          // On error/cancel, mark as authenticated anyway to not block the user
           isAuthenticated = true
           AppLockManager.unlock()
         }
       )
     }
+
   }
 
   companion object {
     private const val TAG = "AGMainActivity"
+  }
+}
+
+@Composable
+private fun DbLockedScreen(activity: FragmentActivity) {
+  var error by remember { mutableStateOf<String?>(null) }
+  var isPrompting by remember { mutableStateOf(false) }
+
+  fun prompt() {
+    if (isPrompting) return
+    isPrompting = true
+    error = null
+    BiometricEncryptionManager.promptDecrypt(
+      activity = activity,
+      context = activity,
+      onSuccess = { cipher ->
+        try {
+          val passphrase = BiometricEncryptionManager.decryptPassphrase(activity, cipher)
+          PassphraseHolder.set(passphrase)
+        } catch (e: Exception) {
+          error = "Decryption failed: ${e.message}"
+        }
+        isPrompting = false
+      },
+      onFailure = { _, msg ->
+        error = msg?.toString() ?: "Authentication failed"
+        isPrompting = false
+      },
+      onError = { code, msg ->
+        // 5=ERROR_CANCELED, 10=ERROR_USER_CANCELED, 13=ERROR_NEGATIVE_BUTTON
+        if (code != 5 && code != 10 && code != 13) error = msg.toString()
+        isPrompting = false
+      },
+    )
+  }
+
+  LaunchedEffect(Unit) { prompt() }
+
+  Box(
+    modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+    contentAlignment = Alignment.Center,
+  ) {
+    Column(
+      horizontalAlignment = Alignment.CenterHorizontally,
+      verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+      Icon(
+        Icons.Rounded.Lock,
+        contentDescription = null,
+        modifier = Modifier.size(56.dp),
+        tint = MaterialTheme.colorScheme.primary,
+      )
+      Spacer(modifier = Modifier.height(4.dp))
+      Text("Box", style = MaterialTheme.typography.headlineMedium)
+      Text(
+        "Authenticate to decrypt your chats",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+      error?.let {
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+      }
+      Spacer(modifier = Modifier.height(8.dp))
+      Button(onClick = ::prompt, enabled = !isPrompting) {
+        Text(if (isPrompting) "Authenticating…" else "Authenticate")
+      }
+    }
   }
 }

@@ -15,10 +15,12 @@
  */
 package com.google.ai.edge.gallery.customtasks.mobileactions
 
+import android.app.AlarmManager
 import android.content.Context
 import android.content.Intent
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
+import android.provider.AlarmClock
 import android.provider.CalendarContract
 import android.provider.ContactsContract
 import android.provider.Settings
@@ -263,6 +265,30 @@ constructor(@ApplicationContext private val appContext: Context) : ViewModel() {
       is CreateCalendarEventAction ->
         createCalendarEvent(context = context, datetime = action.datetime, title = action.title)
 
+      // Set alarm.
+      is SetAlarmAction ->
+        setAlarm(context = context, hour = action.hour, minute = action.minute, label = action.label)
+
+      // Set timer.
+      is SetTimerAction ->
+        setTimer(context = context, lengthSeconds = action.lengthSeconds, label = action.label)
+
+      // Dial number.
+      is DialNumberAction -> dialNumber(context = context, phoneNumber = action.phoneNumber)
+
+      // Send SMS.
+      is SendSmsAction ->
+        sendSms(context = context, phoneNumber = action.phoneNumber, message = action.message)
+
+      // Open URL.
+      is OpenUrlAction -> openUrl(context = context, url = action.url)
+
+      // Open Bluetooth settings.
+      is OpenBluetoothSettingsAction -> openBluetoothSettings(context = context)
+
+      // Open sound settings.
+      is OpenSoundSettingsAction -> openSoundSettings(context = context)
+
       else -> ""
     }
   }
@@ -383,6 +409,99 @@ constructor(@ApplicationContext private val appContext: Context) : ViewModel() {
     }
 
     return ""
+  }
+
+  private fun setAlarm(context: Context, hour: Int, minute: Int, label: String): String {
+    val intent =
+      Intent(AlarmClock.ACTION_SET_ALARM).apply {
+        putExtra(AlarmClock.EXTRA_HOUR, hour)
+        putExtra(AlarmClock.EXTRA_MINUTES, minute)
+        if (label.isNotBlank()) putExtra(AlarmClock.EXTRA_MESSAGE, label)
+        putExtra(AlarmClock.EXTRA_SKIP_UI, false)
+      }
+    return try {
+      context.startActivity(intent)
+      ""
+    } catch (e: Exception) {
+      Log.e(TAG, "Failed to set alarm", e)
+      e.message ?: context.getString(R.string.unknown_error)
+    }
+  }
+
+  private fun setTimer(context: Context, lengthSeconds: Int, label: String): String {
+    val intent =
+      Intent(AlarmClock.ACTION_SET_TIMER).apply {
+        putExtra(AlarmClock.EXTRA_LENGTH, lengthSeconds)
+        if (label.isNotBlank()) putExtra(AlarmClock.EXTRA_MESSAGE, label)
+        putExtra(AlarmClock.EXTRA_SKIP_UI, false)
+      }
+    return try {
+      context.startActivity(intent)
+      ""
+    } catch (e: Exception) {
+      Log.e(TAG, "Failed to set timer", e)
+      e.message ?: context.getString(R.string.unknown_error)
+    }
+  }
+
+  private fun dialNumber(context: Context, phoneNumber: String): String {
+    val intent = Intent(Intent.ACTION_DIAL).apply { data = "tel:$phoneNumber".toUri() }
+    return try {
+      context.startActivity(intent)
+      ""
+    } catch (e: Exception) {
+      Log.e(TAG, "Failed to dial number", e)
+      e.message ?: context.getString(R.string.unknown_error)
+    }
+  }
+
+  private fun sendSms(context: Context, phoneNumber: String, message: String): String {
+    val intent =
+      Intent(Intent.ACTION_SENDTO).apply {
+        data = "smsto:$phoneNumber".toUri()
+        putExtra("sms_body", message)
+      }
+    return try {
+      context.startActivity(intent)
+      ""
+    } catch (e: Exception) {
+      Log.e(TAG, "Failed to send SMS", e)
+      e.message ?: context.getString(R.string.unknown_error)
+    }
+  }
+
+  private fun openUrl(context: Context, url: String): String {
+    val fullUrl = if (url.startsWith("http://") || url.startsWith("https://")) url else "https://$url"
+    val intent = Intent(Intent.ACTION_VIEW).apply { data = fullUrl.toUri() }
+    return try {
+      context.startActivity(intent)
+      ""
+    } catch (e: Exception) {
+      Log.e(TAG, "Failed to open URL", e)
+      e.message ?: context.getString(R.string.unknown_error)
+    }
+  }
+
+  private fun openBluetoothSettings(context: Context): String {
+    val intent = Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
+    return try {
+      context.startActivity(intent)
+      ""
+    } catch (e: Exception) {
+      Log.e(TAG, "Failed to open Bluetooth settings", e)
+      e.message ?: context.getString(R.string.unknown_error)
+    }
+  }
+
+  private fun openSoundSettings(context: Context): String {
+    val intent = Intent(Settings.ACTION_SOUND_SETTINGS)
+    return try {
+      context.startActivity(intent)
+      ""
+    } catch (e: Exception) {
+      Log.e(TAG, "Failed to open sound settings", e)
+      e.message ?: context.getString(R.string.unknown_error)
+    }
   }
 
   private fun createCalendarEvent(context: Context, datetime: String, title: String): String {

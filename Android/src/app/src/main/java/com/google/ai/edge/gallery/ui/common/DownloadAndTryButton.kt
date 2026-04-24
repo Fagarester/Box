@@ -142,7 +142,6 @@ fun DownloadAndTryButton(
   var checkingToken by remember { mutableStateOf(false) }
   var showAgreementAckSheet by remember { mutableStateOf(false) }
   var showErrorDialog by remember { mutableStateOf(false) }
-  var showMemoryWarning by remember { mutableStateOf(false) }
   var showGemmaTermsOfUseDialog by remember { mutableStateOf(false) }
   var downloadStarted by remember { mutableStateOf(false) }
   val sheetState = rememberModalBottomSheetState()
@@ -337,13 +336,7 @@ fun DownloadAndTryButton(
     }
   }
 
-  val checkMemoryAndClickDownloadButton = {
-    if (isMemoryLow(context = context, model = model)) {
-      showMemoryWarning = true
-    } else {
-      handleClickButton()
-    }
-  }
+  val checkMemoryAndClickDownloadButton = { handleClickButton() }
 
   if (!showDownloadProgress) {
     var buttonModifier: Modifier = modifier.height(42.dp)
@@ -564,16 +557,6 @@ fun DownloadAndTryButton(
       text = { Text("Please check your internet connection.") },
       onDismissRequest = { showErrorDialog = false },
       confirmButton = { TextButton(onClick = { showErrorDialog = false }) { Text("Close") } },
-    )
-  }
-
-  if (showMemoryWarning) {
-    MemoryWarningAlert(
-      onProceeded = {
-        handleClickButton()
-        showMemoryWarning = false
-      },
-      onDismissed = { showMemoryWarning = false },
     )
   }
 

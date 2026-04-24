@@ -24,6 +24,9 @@ import com.google.ai.edge.gallery.data.ConfigKeys
 import com.google.ai.edge.gallery.data.Model
 import com.google.ai.edge.gallery.data.Task
 import com.google.ai.edge.gallery.data.local.ChatRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import com.google.ai.edge.gallery.runtime.runtimeHelper
 import com.google.ai.edge.gallery.security.SecurityUtils
 import com.google.ai.edge.gallery.ui.common.chat.ChatMessageAudioClip
@@ -56,6 +59,29 @@ open class LlmChatViewModelBase() : ChatViewModel() {
   override lateinit var chatRepository: ChatRepository
   private var currentConversationId: String? = null
   private val conversationMutex = Mutex()
+
+  private val _currentSystemPrompt = MutableStateFlow("")
+  val currentSystemPrompt: StateFlow<String> = _currentSystemPrompt.asStateFlow()
+
+  fun setCurrentSystemPrompt(prompt: String) {
+    _currentSystemPrompt.value = prompt
+  }
+
+  fun updateSystemPrompt(prompt: String) {
+    _currentSystemPrompt.value = prompt
+    val convId = currentConversationId ?: return
+    viewModelScope.launch(Dispatchers.IO) {
+      try {
+        val conv = chatRepository.getConversationById(convId) ?: return@launch
+        chatRepository.updateConversation(conv.copy(systemPrompt = prompt))
+      } catch (e: Exception) {
+        Log.e(TAG, "Failed to persist system prompt", e)
+      }
+    }
+  }
+
+  suspend fun getConversationById(conversationId: String) =
+    chatRepository.getConversationById(conversationId)
 
   /**
    * Box: Set the current conversation ID for continuing an existing conversation
@@ -106,6 +132,7 @@ open class LlmChatViewModelBase() : ChatViewModel() {
               title = content.take(50),
               taskType = "llm_chat",
               modelName = model.name,
+              systemPrompt = _currentSystemPrompt.value,
             )
             currentConversationId = conv.id
             Log.d(TAG, "Created conversation with ID: ${conv.id}")

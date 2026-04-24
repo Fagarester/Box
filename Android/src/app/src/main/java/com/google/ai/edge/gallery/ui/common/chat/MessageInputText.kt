@@ -135,8 +135,12 @@ import com.google.ai.edge.gallery.ui.modelmanager.ModelManagerViewModel
 import com.google.ai.edge.gallery.ui.theme.bodyLargeNarrow
 import java.io.FileInputStream
 import java.util.concurrent.Executors
+import android.provider.OpenableColumns
+import androidx.compose.material.icons.rounded.AttachFile
+import androidx.compose.ui.text.style.TextOverflow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private const val TAG = "AGMessageInputText"
 
@@ -174,6 +178,7 @@ fun MessageInputText(
   showAudioPicker: Boolean = false,
   showStopButtonWhenInProgress: Boolean = false,
   onImageLimitExceeded: () -> Unit = {},
+  showDocumentPicker: Boolean = false,
 ) {
   val context = LocalContext.current
   val lifecycleOwner = LocalLifecycleOwner.current
@@ -189,6 +194,7 @@ fun MessageInputText(
   var pickedAudioClips by remember { mutableStateOf<List<AudioClip>>(listOf()) }
   var hasFrontCamera by remember { mutableStateOf(false) }
   val sensorObserver = remember { SensorObserver(context) }
+  var pendingDocument by remember { mutableStateOf<Pair<String, String>?>(null) }
 
   val updatePickedImages: (List<Bitmap>) -> Unit = { bitmaps ->
     val isAiCore = modelManagerUiState.selectedModel.runtimeType == RuntimeType.AICORE
@@ -299,14 +305,28 @@ fun MessageInputText(
       }
     }
 
+  val pickDocument =
+    rememberLauncherForActivityResult(
+      contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+      if (result.resultCode == android.app.Activity.RESULT_OK) {
+        result.data?.data?.let { uri ->
+          scope.launch(Dispatchers.IO) {
+            val doc = try { readDocumentContent(context, uri) } catch (e: Exception) { null }
+            withContext(Dispatchers.Main) { pendingDocument = doc }
+          }
+        }
+      }
+    }
+
   DisposableEffect(lifecycleOwner) {
     lifecycleOwner.lifecycle.addObserver(sensorObserver)
     onDispose { lifecycleOwner.lifecycle.removeObserver(sensorObserver) }
   }
 
   Column {
-    // A preview panel for the selected images and audio clips.
-    if (pickedImages.isNotEmpty() || pickedAudioClips.isNotEmpty()) {
+    // A preview panel for the selected images, audio clips, and attached documents.
+    if (pickedImages.isNotEmpty() || pickedAudioClips.isNotEmpty() || pendingDocument != null) {
       Row(
         modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -349,6 +369,36 @@ fun MessageInputText(
                 curIndex != index
               }
             }
+          }
+        }
+
+        // Document chip.
+        pendingDocument?.let { (filename, _) ->
+          Box(contentAlignment = Alignment.TopEnd) {
+            Row(
+              modifier =
+                Modifier.shadow(2.dp, RoundedCornerShape(8.dp))
+                  .clip(RoundedCornerShape(8.dp))
+                  .background(MaterialTheme.colorScheme.surface)
+                  .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+                  .padding(horizontal = 12.dp, vertical = 8.dp),
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+              Icon(
+                Icons.Rounded.AttachFile,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.primary,
+              )
+              Text(
+                filename,
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+              )
+            }
+            MediaPanelCloseButton { pendingDocument = null }
           }
         }
 
@@ -580,6 +630,46 @@ fun MessageInputText(
                         )
                       }
 
+                      // Document picker.
+                      if (showDocumentPicker) {
+                        DropdownMenuItem(
+                          text = {
+                            Row(
+                              verticalAlignment = Alignment.CenterVertically,
+                              horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                              Icon(Icons.Rounded.AttachFile, contentDescription = null)
+                              Text("Attach document")
+                            }
+                          },
+                          onClick = {
+                            showAddContentMenu = false
+                            val intent =
+                              Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                                addCategory(Intent.CATEGORY_OPENABLE)
+                                type = "*/*"
+                                putExtra(
+                                  Intent.EXTRA_MIME_TYPES,
+                                  arrayOf(
+                                    "text/plain",
+                                    "text/markdown",
+                                    "text/csv",
+                                    "application/json",
+                                    "text/xml",
+                                    "text/html",
+                                    "text/x-python",
+                                    "text/javascript",
+                                    "text/x-java-source",
+                                    "text/x-kotlin",
+                                  ),
+                                )
+                                putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false)
+                              }
+                            pickDocument.launch(intent)
+                          },
+                        )
+                      }
+
                       // Prompt history.
                       DropdownMenuItem(
                         text = {
@@ -634,18 +724,27 @@ fun MessageInputText(
                     enabled =
                       !inProgress &&
                         !isResettingSession &&
-                        (curMessage.isNotEmpty() || pickedAudioClips.isNotEmpty()),
+                        (curMessage.isNotEmpty() || pickedAudioClips.isNotEmpty() || pendingDocument != null),
                     onClick = {
-                      var message = curMessage.trim()
+                      val baseMessage = curMessage.trim()
+                      val doc = pendingDocument
+                      val fullText = if (doc != null) {
+                        val docBlock =
+                          "\n\n---\n📄 **Attached Document: ${doc.first}**\n```\n${doc.second}\n```\n---\n"
+                        if (baseMessage.isEmpty()) docBlock.trimStart('\n') else baseMessage + docBlock
+                      } else {
+                        baseMessage
+                      }
                       onSendMessage(
                         createMessagesToSend(
                           pickedImages = pickedImages,
                           audioClips = pickedAudioClips,
-                          text = message,
+                          text = fullText,
                         )
                       )
                       pickedImages = listOf()
                       pickedAudioClips = listOf()
+                      pendingDocument = null
                     },
                     colors =
                       IconButtonDefaults.iconButtonColors(
@@ -1052,6 +1151,27 @@ private fun createMessagesToSend(
   }
 
   return messages
+}
+
+private fun readDocumentContent(context: Context, uri: Uri): Pair<String, String>? {
+  val filename = resolveDocumentFilename(context, uri)
+  val content = context.contentResolver.openInputStream(uri)?.use { stream ->
+    val text = stream.bufferedReader(Charsets.UTF_8).readText()
+    if (text.length > 50_000) text.take(50_000) + "\n\n[Content truncated due to length]" else text
+  } ?: return null
+  return Pair(filename, content)
+}
+
+private fun resolveDocumentFilename(context: Context, uri: Uri): String {
+  context.contentResolver.query(
+    uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null
+  )?.use { cursor ->
+    if (cursor.moveToFirst()) {
+      val idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+      if (idx >= 0) return cursor.getString(idx)
+    }
+  }
+  return uri.lastPathSegment?.substringAfterLast('/') ?: "document"
 }
 
 /**

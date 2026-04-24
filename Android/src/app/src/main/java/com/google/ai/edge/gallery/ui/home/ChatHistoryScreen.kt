@@ -24,10 +24,14 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Chat
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DeleteSweep
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.DriveFileRenameOutline
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -42,6 +46,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,6 +59,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.compose.ui.platform.LocalContext
 import com.google.ai.edge.gallery.data.local.entities.Conversation
 import com.google.ai.edge.gallery.data.local.entities.Message
 import com.google.ai.edge.gallery.ui.modelmanager.ModelManagerViewModel
@@ -69,10 +75,22 @@ fun ChatHistoryScreen(
     modelManagerViewModel: ModelManagerViewModel? = null,
     viewModel: ChatHistoryViewModel = hiltViewModel(),
 ) {
+    val context = LocalContext.current
     val conversations by viewModel.conversations.collectAsState()
     val selectedMessages by viewModel.selectedMessages.collectAsState()
     var showDeleteAllDialog by remember { mutableStateOf(false) }
     var selectedConversation by remember { mutableStateOf<Conversation?>(null) }
+    var searchQuery by remember { mutableStateOf("") }
+    val filteredConversations by remember(conversations, searchQuery) {
+        derivedStateOf {
+            if (searchQuery.isEmpty()) conversations
+            else conversations.filter {
+                it.title.contains(searchQuery, ignoreCase = true) ||
+                it.modelName.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
+    var conversationToRename by remember { mutableStateOf<Conversation?>(null) }
 
     Scaffold(
         topBar = {
@@ -88,6 +106,17 @@ fun ChatHistoryScreen(
                 },
                 actions = {
                     if (conversations.isNotEmpty()) {
+                        IconButton(onClick = {
+                            searchQuery = if (searchQuery.isEmpty()) " " else ""
+                        }) {
+                            Icon(
+                                if (searchQuery.isEmpty()) Icons.Rounded.Search else Icons.Rounded.Close,
+                                contentDescription = if (searchQuery.isEmpty()) "Search" else "Clear search"
+                            )
+                        }
+                        IconButton(onClick = { viewModel.exportAll(context) }) {
+                            Icon(Icons.Rounded.Download, contentDescription = "Export all chats")
+                        }
                         IconButton(onClick = { showDeleteAllDialog = true }) {
                             Icon(
                                 Icons.Rounded.DeleteSweep,
@@ -138,8 +167,44 @@ fun ChatHistoryScreen(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
+                if (searchQuery.isNotEmpty() || conversations.size > 3) {
+                    item(key = "search_bar") {
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = { Text("Search conversations…") },
+                            leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                            trailingIcon = {
+                                if (searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = { searchQuery = "" }) {
+                                        Icon(Icons.Rounded.Close, contentDescription = "Clear")
+                                    }
+                                }
+                            },
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
+                        )
+                    }
+                }
+
+                if (filteredConversations.isEmpty()) {
+                    item(key = "no_results") {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().height(120.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                "No conversations match \"$searchQuery\"",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+
                 items(
-                    items = conversations,
+                    items = filteredConversations,
                     key = { it.id },
                 ) { conversation ->
                     val dismissState = rememberSwipeToDismissBoxState(
@@ -185,20 +250,14 @@ fun ChatHistoryScreen(
                                 selectedConversation = conversation
                                 viewModel.loadMessages(conversation.id)
                             },
+                            onRename = { conversationToRename = it },
                             onContinueChat = { conversation ->
-                                // Navigate back to chat with conversation loaded
                                 val (model, messages) = viewModel.continueChat(conversation)
-                                
-                                // Find the model in model manager and navigate to chat
                                 model?.let { chatModel ->
                                     modelManagerViewModel?.getModelByName(name = chatModel.name)?.let { foundModel ->
-                                        // Select the model and navigate to the chat screen
                                         modelManagerViewModel.selectModel(foundModel)
-                                        
-                                        // Find the LLM chat task
                                         val llmTask = modelManagerViewModel.getCustomTaskByTaskId("llm_chat")
                                         llmTask?.let { task ->
-                                            // Navigate with conversation ID to load history
                                             navController?.navigate("route_model/${task.task.id}/${chatModel.name}?conversationId=${conversation.id}")
                                         }
                                     }
@@ -235,12 +294,41 @@ fun ChatHistoryScreen(
         )
     }
 
+    // Rename dialog
+    conversationToRename?.let { conv ->
+        var renameText by remember(conv.id) { mutableStateOf(conv.title) }
+        AlertDialog(
+            onDismissRequest = { conversationToRename = null },
+            title = { Text("Rename conversation") },
+            text = {
+                OutlinedTextField(
+                    value = renameText,
+                    onValueChange = { renameText = it },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.renameConversation(conv, renameText)
+                    conversationToRename = null
+                }, enabled = renameText.isNotBlank()) {
+                    Text("Rename")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { conversationToRename = null }) { Text("Cancel") }
+            },
+        )
+    }
+
     // Message viewer bottom sheet
     if (selectedConversation != null) {
         MessageViewerSheet(
             conversation = selectedConversation!!,
             messages = selectedMessages,
             onDismiss = { selectedConversation = null },
+            onExport = { conv, msgs -> viewModel.exportConversation(context, conv, msgs) },
         )
     }
 }
@@ -249,6 +337,7 @@ fun ChatHistoryScreen(
 private fun ConversationCard(
     conversation: Conversation,
     onClick: () -> Unit,
+    onRename: (Conversation) -> Unit,
     onContinueChat: (Conversation) -> Unit,
 ) {
     val dateFormat = remember { SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()) }
@@ -285,12 +374,26 @@ private fun ConversationCard(
             Spacer(modifier = Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = conversation.title,
-                    style = MaterialTheme.typography.titleSmall,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = conversation.title,
+                        style = MaterialTheme.typography.titleSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(
+                        onClick = { onRename(conversation) },
+                        modifier = Modifier.size(28.dp),
+                    ) {
+                        Icon(
+                            Icons.Rounded.DriveFileRenameOutline,
+                            contentDescription = "Rename",
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        )
+                    }
+                }
                 Spacer(modifier = Modifier.height(2.dp))
                 Row {
                     if (conversation.modelName.isNotEmpty()) {
@@ -343,6 +446,7 @@ private fun MessageViewerSheet(
     conversation: Conversation,
     messages: List<Message>,
     onDismiss: () -> Unit,
+    onExport: (Conversation, List<Message>) -> Unit = { _, _ -> },
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -368,6 +472,11 @@ private fun MessageViewerSheet(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary,
                         )
+                    }
+                }
+                if (messages.isNotEmpty()) {
+                    IconButton(onClick = { onExport(conversation, messages) }) {
+                        Icon(Icons.Rounded.Download, contentDescription = "Export conversation")
                     }
                 }
                 IconButton(onClick = onDismiss) {

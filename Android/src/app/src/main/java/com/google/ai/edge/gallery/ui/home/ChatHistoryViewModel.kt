@@ -1,5 +1,10 @@
 package com.google.ai.edge.gallery.ui.home
 
+import android.content.ContentValues
+import android.content.Context
+import android.os.Environment
+import android.provider.MediaStore
+import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.ai.edge.gallery.data.local.ChatRepository
@@ -18,6 +23,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
@@ -48,6 +57,100 @@ class ChatHistoryViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             chatRepository.deleteAllConversations()
         }
+    }
+
+    fun renameConversation(conversation: Conversation, newTitle: String) {
+        val trimmed = newTitle.trim()
+        if (trimmed.isEmpty()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            chatRepository.updateConversation(conversation.copy(title = trimmed))
+        }
+    }
+
+    fun exportAll(context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+                val conversations = chatRepository.getAllConversationsSync()
+                val sb = StringBuilder()
+                sb.appendLine("Box Chat Export")
+                sb.appendLine("Exported: ${fmt.format(Date())}")
+                sb.appendLine("Total conversations: ${conversations.size}")
+                sb.appendLine("=".repeat(72))
+                conversations.forEachIndexed { i, conv ->
+                    sb.appendLine()
+                    sb.appendLine("--- Conversation ${i + 1}: \"${conv.title}\" ---")
+                    if (conv.modelName.isNotEmpty()) sb.appendLine("Model: ${conv.modelName}")
+                    sb.appendLine("Date: ${fmt.format(Date(conv.createdAt))}")
+                    sb.appendLine()
+                    chatRepository.getMessagesSync(conv.id).forEach { msg ->
+                        val sender = if (msg.role == "user") "You" else "Assistant"
+                        sb.appendLine("[${fmt.format(Date(msg.timestamp))}] $sender:")
+                        sb.appendLine(msg.content)
+                        sb.appendLine()
+                    }
+                    sb.appendLine("=".repeat(72))
+                }
+                val fileName = "box_chat_export_${System.currentTimeMillis()}.txt"
+                val saved = saveToDownloads(context, fileName, sb.toString())
+                withContext(Dispatchers.Main) {
+                    if (saved) Toast.makeText(context, "Saved to Downloads/$fileName", Toast.LENGTH_LONG).show()
+                    else Toast.makeText(context, "Export failed", Toast.LENGTH_SHORT).show()
+                }
+            } catch (_: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Export failed", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    fun exportConversation(context: Context, conversation: Conversation, messages: List<Message>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+                val sb = StringBuilder()
+                sb.appendLine("Box Chat Export")
+                sb.appendLine("Conversation: ${conversation.title}")
+                if (conversation.modelName.isNotEmpty()) sb.appendLine("Model: ${conversation.modelName}")
+                sb.appendLine("Exported: ${fmt.format(Date())}")
+                sb.appendLine("=".repeat(72))
+                sb.appendLine()
+                messages.forEach { msg ->
+                    val sender = if (msg.role == "user") "You" else "Assistant"
+                    sb.appendLine("[${fmt.format(Date(msg.timestamp))}] $sender:")
+                    sb.appendLine(msg.content)
+                    sb.appendLine()
+                }
+                val safeName = conversation.title.replace(Regex("[^a-zA-Z0-9]"), "_").take(30)
+                val fileName = "box_${safeName}_${System.currentTimeMillis()}.txt"
+                val saved = saveToDownloads(context, fileName, sb.toString())
+                withContext(Dispatchers.Main) {
+                    if (saved) Toast.makeText(context, "Saved to Downloads/$fileName", Toast.LENGTH_LONG).show()
+                    else Toast.makeText(context, "Export failed", Toast.LENGTH_SHORT).show()
+                }
+            } catch (_: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Export failed", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun saveToDownloads(context: Context, fileName: String, content: String): Boolean {
+        val values = ContentValues().apply {
+            put(MediaStore.Downloads.DISPLAY_NAME, fileName)
+            put(MediaStore.Downloads.MIME_TYPE, "text/plain")
+            put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+            put(MediaStore.Downloads.IS_PENDING, 1)
+        }
+        val resolver = context.contentResolver
+        val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: return false
+        resolver.openOutputStream(uri)?.use { it.write(content.toByteArray()) }
+        values.clear()
+        values.put(MediaStore.Downloads.IS_PENDING, 0)
+        resolver.update(uri, values, null, null)
+        return true
     }
 
     /**

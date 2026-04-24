@@ -92,6 +92,8 @@ fun ModelPageAppBar(
     modelInitializationStatus?.status == ModelInitializationStatusType.INITIALIZING
   val isModelInitialized =
     modelInitializationStatus?.status == ModelInitializationStatusType.INITIALIZED
+  val isModelError =
+    modelInitializationStatus?.status == ModelInitializationStatusType.ERROR
 
   CenterAlignedTopAppBar(
     title = {
@@ -151,7 +153,7 @@ fun ModelPageAppBar(
           configButtonOffset = (-40).dp
         }
         if (showConfigButton) {
-          val enableConfigButton = !isModelInitializing && !inProgress && isModelInitialized
+          val enableConfigButton = !isModelInitializing && !inProgress && (isModelInitialized || isModelError)
           IconButton(
             onClick = { showConfigDialog = true },
             enabled = enableConfigButton,

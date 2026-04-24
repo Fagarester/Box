@@ -16,12 +16,19 @@
 package com.google.ai.edge.gallery.customtasks.mobileactions
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Alarm
+import androidx.compose.material.icons.outlined.Bluetooth
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.FlashOff
 import androidx.compose.material.icons.outlined.FlashlightOn
+import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.PersonAdd
+import androidx.compose.material.icons.outlined.Phone
+import androidx.compose.material.icons.outlined.Sms
+import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material.icons.outlined.VolumeUp
 import androidx.compose.material.icons.outlined.Wifi
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -34,6 +41,13 @@ enum class ActionType {
   ACTION_SHOW_LOCATION_ON_MAP,
   ACTION_OPEN_WIFI_SETTINGS,
   ACTION_CREATE_CALENDAR_EVENT,
+  ACTION_SET_ALARM,
+  ACTION_SET_TIMER,
+  ACTION_DIAL_NUMBER,
+  ACTION_SEND_SMS,
+  ACTION_OPEN_URL,
+  ACTION_OPEN_BLUETOOTH_SETTINGS,
+  ACTION_OPEN_SOUND_SETTINGS,
 }
 
 data class FunctionCallDetails(
@@ -136,4 +150,87 @@ class CreateCalendarEventAction(val datetime: String, val title: String) :
         functionName = "createCalendarEvent",
         parameters = listOf(Pair("datetime", datetime), Pair("title", title)),
       ),
+  )
+
+// Action to set an alarm.
+class SetAlarmAction(val hour: Int, val minute: Int, val label: String) :
+  Action(
+    type = ActionType.ACTION_SET_ALARM,
+    icon = Icons.Outlined.Alarm,
+    functionCallDetails =
+      FunctionCallDetails(
+        functionName = "setAlarm",
+        parameters =
+          listOf(
+            Pair("hour", hour.toString()),
+            Pair("minute", minute.toString()),
+            Pair("label", label),
+          ),
+      ),
+  )
+
+// Action to set a countdown timer.
+class SetTimerAction(val lengthSeconds: Int, val label: String) :
+  Action(
+    type = ActionType.ACTION_SET_TIMER,
+    icon = Icons.Outlined.Timer,
+    functionCallDetails =
+      FunctionCallDetails(
+        functionName = "setTimer",
+        parameters = listOf(Pair("lengthSeconds", lengthSeconds.toString()), Pair("label", label)),
+      ),
+  )
+
+// Action to dial a phone number.
+class DialNumberAction(val phoneNumber: String) :
+  Action(
+    type = ActionType.ACTION_DIAL_NUMBER,
+    icon = Icons.Outlined.Phone,
+    functionCallDetails =
+      FunctionCallDetails(
+        functionName = "dialNumber",
+        parameters = listOf(Pair("phoneNumber", phoneNumber)),
+      ),
+  )
+
+// Action to send an SMS.
+class SendSmsAction(val phoneNumber: String, val message: String) :
+  Action(
+    type = ActionType.ACTION_SEND_SMS,
+    icon = Icons.Outlined.Sms,
+    functionCallDetails =
+      FunctionCallDetails(
+        functionName = "sendSms",
+        parameters = listOf(Pair("phoneNumber", phoneNumber), Pair("message", message)),
+      ),
+  )
+
+// Action to open a URL in the browser.
+class OpenUrlAction(val url: String) :
+  Action(
+    type = ActionType.ACTION_OPEN_URL,
+    icon = Icons.Outlined.Language,
+    functionCallDetails =
+      FunctionCallDetails(
+        functionName = "openUrl",
+        parameters = listOf(Pair("url", url)),
+      ),
+  )
+
+// Action to open Bluetooth settings.
+class OpenBluetoothSettingsAction :
+  Action(
+    type = ActionType.ACTION_OPEN_BLUETOOTH_SETTINGS,
+    icon = Icons.Outlined.Bluetooth,
+    functionCallDetails =
+      FunctionCallDetails(functionName = "openBluetoothSettings", parameters = listOf()),
+  )
+
+// Action to open sound/volume settings.
+class OpenSoundSettingsAction :
+  Action(
+    type = ActionType.ACTION_OPEN_SOUND_SETTINGS,
+    icon = Icons.Outlined.VolumeUp,
+    functionCallDetails =
+      FunctionCallDetails(functionName = "openSoundSettings", parameters = listOf()),
   )

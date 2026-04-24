@@ -34,6 +34,9 @@ pluginManagement {
     }
   }
 }
+plugins {
+  id("org.gradle.toolchains.foojay-resolver-convention") version "0.10.0"
+}
 
 dependencyResolutionManagement {
   repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
@@ -48,3 +51,5 @@ rootProject.name = "AI Edge Gallery"
 
 include(":app")
 include(":smollm")
+include(":stablediffusion")
+include(":whisper")

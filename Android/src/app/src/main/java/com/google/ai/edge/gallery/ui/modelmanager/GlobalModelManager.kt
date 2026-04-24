@@ -108,6 +108,7 @@ fun GlobalModelManager(
   onModelSelected: (Task, Model) -> Unit,
   onBenchmarkClicked: (Model) -> Unit,
   modifier: Modifier = Modifier,
+  startImport: Boolean = false,
 ) {
   val uiState by viewModel.uiState.collectAsState()
   val builtInModels = remember { mutableStateListOf<Model>() }
@@ -132,6 +133,10 @@ fun GlobalModelManager(
   var showPromo by remember { mutableStateOf(false) }
   LaunchedEffect(Unit) {
     showPromo = !viewModel.dataStoreRepository.hasViewedPromo(promoId = promoId)
+  }
+
+  LaunchedEffect(startImport) {
+    if (startImport) showImportModelSheet = true
   }
 
   val filePickerLauncher: ActivityResultLauncher<Intent> =

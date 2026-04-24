@@ -19,15 +19,20 @@ object AppLockManager {
 
     private const val PREFS_NAME = "box_settings"
     private const val KEY_BIOMETRIC_LOCK = "biometric_lock_enabled"
+    private const val KEY_SCREENSHOTS_ENABLED = "screenshots_enabled"
 
     private val _isUnlocked = MutableStateFlow(true)
     val isUnlocked: StateFlow<Boolean> = _isUnlocked.asStateFlow()
+
+    private val _screenshotsEnabled = MutableStateFlow(false)
+    val screenshotsEnabled: StateFlow<Boolean> = _screenshotsEnabled.asStateFlow()
 
     private var isBiometricLockEnabled = false
 
     fun init(context: Context) {
         val prefs = getPrefs(context)
         isBiometricLockEnabled = prefs.getBoolean(KEY_BIOMETRIC_LOCK, false)
+        _screenshotsEnabled.value = prefs.getBoolean(KEY_SCREENSHOTS_ENABLED, false)
         
         // Observe app lifecycle
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : LifecycleObserver {
@@ -53,6 +58,13 @@ object AppLockManager {
     }
 
     fun isBiometricLockEnabled(): Boolean = isBiometricLockEnabled
+
+    fun setScreenshotsEnabled(context: Context, enabled: Boolean) {
+        getPrefs(context).edit().putBoolean(KEY_SCREENSHOTS_ENABLED, enabled).apply()
+        _screenshotsEnabled.value = enabled
+    }
+
+    fun isScreenshotsEnabled(): Boolean = _screenshotsEnabled.value
 
     private fun getPrefs(context: Context): SharedPreferences {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)

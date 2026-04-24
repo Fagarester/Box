@@ -48,10 +48,12 @@
   <string name="model_list_experimental_label" translatable="false">EXPERIMENTAL</string>
   <string name="cancel" translatable="false">Cancel</string>
   <string name="category_unlabeled" translatable="false">Unlabeled</string>
-  <string name="category_llm" translatable="false">LLM</string>
+  <string name="category_llm" translatable="false">Local Chat</string>
   <string name="category_agents" translatable="false">Agents</string>
   <string name="category_classical_ml" translatable="false">Classical ML</string>
   <string name="category_experimental" translatable="false">Experimental</string>
+  <string name="category_image_gen" translatable="false">Local Diffusion</string>
+  <string name="category_voice" translatable="false">Voice</string>
   <string name="chat_textinput_placeholder" translatable="false">Type message…</string>
   <string name="chat_you" translatable="false">You</string>
   <string name="chat_llm_agent_name" translatable="false">LLM</string>
@@ -211,6 +213,13 @@
   <string name="prompt_template_label_create_calendar_event" translatable="false">Create calendar event</string>
   <string name="prompt_template_label_show_location_on_map" translatable="false">Show location on map</string>
   <string name="prompt_template_label_open_wifi_settings" translatable="false">Open WIFI settings</string>
+  <string name="prompt_template_label_set_alarm" translatable="false">Set alarm</string>
+  <string name="prompt_template_label_set_timer" translatable="false">Set timer</string>
+  <string name="prompt_template_label_dial_number" translatable="false">Dial number</string>
+  <string name="prompt_template_label_send_sms" translatable="false">Send SMS</string>
+  <string name="prompt_template_label_open_url" translatable="false">Open URL</string>
+  <string name="prompt_template_label_open_bluetooth_settings" translatable="false">Open Bluetooth settings</string>
+  <string name="prompt_template_label_open_sound_settings" translatable="false">Open sound settings</string>
 
   <!-- Strings for MobileActionsChallengeDialog -->
   <string name="mobile_actions_challenge_title" translatable="false">Mobile Actions Finetune Challenge</string>

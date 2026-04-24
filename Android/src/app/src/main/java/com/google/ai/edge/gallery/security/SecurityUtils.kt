@@ -104,21 +104,40 @@ object SecurityUtils {
 
     /**
      * Generate a database encryption passphrase from Android Keystore.
-     * Used to derive the SQLCipher key.
+     * If biometric DB encryption is enabled, the passphrase must be in PassphraseHolder
+     * (set by MainActivity after biometric auth). Otherwise reads/generates from SharedPrefs.
      */
     fun getDatabasePassphrase(context: Context): ByteArray {
+        if (BiometricEncryptionManager.isEnabled(context)) {
+            return PassphraseHolder.get()
+                ?: throw IllegalStateException("Database locked: biometric authentication required")
+        }
+        return getOrCreatePlainPassphrase(context)
+    }
+
+    fun getOrCreatePlainPassphrase(context: Context): ByteArray {
         val prefs = context.getSharedPreferences("box_security", Context.MODE_PRIVATE)
         val existing = prefs.getString("db_key", null)
         if (existing != null) {
             return android.util.Base64.decode(existing, android.util.Base64.NO_WRAP)
         }
-
-        // Generate a new random 32-byte key
         val passphrase = ByteArray(32)
         SecureRandom().nextBytes(passphrase)
         prefs.edit()
             .putString("db_key", android.util.Base64.encodeToString(passphrase, android.util.Base64.NO_WRAP))
             .apply()
         return passphrase
+    }
+
+    fun storePlainPassphrase(context: Context, passphrase: ByteArray) {
+        context.getSharedPreferences("box_security", Context.MODE_PRIVATE).edit()
+            .putString("db_key", android.util.Base64.encodeToString(passphrase, android.util.Base64.NO_WRAP))
+            .apply()
+    }
+
+    fun clearPlainPassphrase(context: Context) {
+        context.getSharedPreferences("box_security", Context.MODE_PRIVATE).edit()
+            .remove("db_key")
+            .apply()
     }
 }

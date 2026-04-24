@@ -72,6 +72,7 @@ import androidx.navigation.navArgument
 import com.google.ai.edge.gallery.GalleryEvent
 import com.google.ai.edge.gallery.customtasks.common.CustomTaskData
 import com.google.ai.edge.gallery.customtasks.common.CustomTaskDataForBuiltinTask
+import com.google.ai.edge.gallery.data.BuiltInTaskId
 import com.google.ai.edge.gallery.data.ModelDownloadStatusType
 import com.google.ai.edge.gallery.data.Task
 import com.google.ai.edge.gallery.data.isLegacyTasks
@@ -205,6 +206,20 @@ fun GalleryNavHost(
           },
           onModelsClicked = { navController.navigate(ROUTE_MODEL_MANAGER) },
           navigateToChatHistory = { navController.navigate(ROUTE_CHAT_HISTORY) },
+          onNewChatClicked = {
+            val llmChatTask = modelManagerViewModel.getTaskById(BuiltInTaskId.LLM_CHAT)
+            val firstModel = llmChatTask?.models?.firstOrNull()
+            if (firstModel != null) {
+              lastNavigatedModelName = ""
+              navController.navigate("$ROUTE_MODEL/${BuiltInTaskId.LLM_CHAT}/${firstModel.name}?autoResume=false")
+            } else {
+              pickedTask = llmChatTask
+              navController.navigate(ROUTE_MODEL_LIST)
+            }
+          },
+          onImportModelClicked = {
+            navController.navigate("$ROUTE_MODEL_MANAGER?startImport=true")
+          },
           gm4 = true,
         )
       }
@@ -246,16 +261,20 @@ fun GalleryNavHost(
 
     // Model page.
     composable(
-      route = "$ROUTE_MODEL/{taskId}/{modelName}?conversationId={conversationId}",
+      route = "$ROUTE_MODEL/{taskId}/{modelName}?conversationId={conversationId}&autoResume={autoResume}",
       arguments =
         listOf(
           navArgument("taskId") { type = NavType.StringType },
           navArgument("modelName") { type = NavType.StringType },
-          navArgument("conversationId") { 
-    type = NavType.StringType
-    nullable = true
-    defaultValue = null 
-},
+          navArgument("conversationId") {
+            type = NavType.StringType
+            nullable = true
+            defaultValue = null
+          },
+          navArgument("autoResume") {
+            type = NavType.BoolType
+            defaultValue = true
+          },
         ),
       enterTransition = { slideEnter() },
       exitTransition = { slideExit() },
@@ -263,6 +282,7 @@ fun GalleryNavHost(
       val modelName = backStackEntry.arguments?.getString("modelName") ?: ""
       val taskId = backStackEntry.arguments?.getString("taskId") ?: ""
       val conversationId = backStackEntry.arguments?.getString("conversationId")
+      val autoResume = backStackEntry.arguments?.getBoolean("autoResume") ?: true
       val scope = rememberCoroutineScope()
       val context = LocalContext.current
 
@@ -285,6 +305,7 @@ fun GalleryNavHost(
                     navController.navigateUp()
                   },
                   conversationId = conversationId,
+                  autoResumeConversation = autoResume,
                 )
             )
           } else {
@@ -339,7 +360,10 @@ fun GalleryNavHost(
 
     // Global model manager page.
     composable(
-      route = ROUTE_MODEL_MANAGER,
+      route = "$ROUTE_MODEL_MANAGER?startImport={startImport}",
+      arguments = listOf(
+        navArgument("startImport") { type = NavType.BoolType; defaultValue = false }
+      ),
       enterTransition = {
         if (
           initialState.destination.route?.startsWith(ROUTE_BENCHMARK) == true ||
@@ -361,6 +385,7 @@ fun GalleryNavHost(
         }
       },
     ) { backStackEntry ->
+      val startImport = backStackEntry.arguments?.getBoolean("startImport") ?: false
       GlobalModelManager(
         viewModel = modelManagerViewModel,
         navigateUp = {
@@ -377,6 +402,7 @@ fun GalleryNavHost(
           )
           navController.navigate("$ROUTE_BENCHMARK/${model.name}")
         },
+        startImport = startImport,
       )
     }
 

@@ -106,8 +106,10 @@ fun ChatView(
   showImagePicker: Boolean = false,
   showAudioPicker: Boolean = false,
   emptyStateComposable: @Composable (Model) -> Unit = {},
+  aboveInputComposable: @Composable (Model) -> Unit = {},
   allowEditingSystemPrompt: Boolean = false,
   conversationId: String? = null,
+  autoResumeConversation: Boolean = true,
   curSystemPrompt: String = "",
   onSystemPromptChanged: (String) -> Unit = {},
   sendMessageTrigger: SendMessageTrigger? = null,
@@ -119,15 +121,20 @@ fun ChatView(
   val context = LocalContext.current
 
   // Load conversation history: use explicit conversationId if provided, else auto-resume
-  // the most recent conversation for this model.
+  // the most recent conversation for this model (only when autoResumeConversation is true).
   LaunchedEffect(conversationId, selectedModel.name) {
     val llmViewModel = viewModel as? com.google.ai.edge.gallery.ui.llmchat.LlmChatViewModelBase
       ?: return@LaunchedEffect
     val existingMessages = llmViewModel.uiState.value.messagesByModel[selectedModel.name]
     if (!existingMessages.isNullOrEmpty()) return@LaunchedEffect  // already loaded for this model
 
-    val convId = conversationId
-      ?: llmViewModel.getLatestConversationForModel(selectedModel.name)?.id
+    val convId = if (conversationId != null) {
+      conversationId
+    } else if (autoResumeConversation) {
+      llmViewModel.getLatestConversationForModel(selectedModel.name)?.id
+    } else {
+      null
+    }
 
     if (convId != null) {
       Log.d(TAG, "Loading conversation history for: $convId (model=${selectedModel.name})")
@@ -144,6 +151,11 @@ fun ChatView(
         )
       }
       llmViewModel.setCurrentConversationId(convId)
+      // Load the system prompt for this conversation so the config dialog shows it.
+      val conv = llmViewModel.getConversationById(convId)
+      if (conv?.systemPrompt?.isNotEmpty() == true) {
+        llmViewModel.setCurrentSystemPrompt(conv.systemPrompt)
+      }
     } else {
       Log.d(TAG, "No existing conversation for model ${selectedModel.name}, starting fresh")
     }
@@ -284,6 +296,7 @@ fun ChatView(
                 showImagePicker = showImagePicker,
                 showAudioPicker = showAudioPicker,
                 emptyStateComposable = emptyStateComposable,
+                aboveInputComposable = aboveInputComposable,
               )
             // Model download
             false ->

@@ -33,9 +33,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -59,7 +61,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ListAlt
 import androidx.compose.material.icons.rounded.Error
 import androidx.compose.material.icons.rounded.Forum
+import androidx.compose.material.icons.rounded.AddComment
 import androidx.compose.material.icons.rounded.Flag
+import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -73,6 +77,7 @@ import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
@@ -164,6 +169,8 @@ fun HomeScreen(
   navigateToTaskScreen: (Task) -> Unit,
   onModelsClicked: () -> Unit,
   navigateToChatHistory: () -> Unit = {},
+  onNewChatClicked: () -> Unit = {},
+  onImportModelClicked: () -> Unit = {},
   enableAnimation: Boolean,
   modifier: Modifier = Modifier,
   gm4: Boolean = false,
@@ -327,32 +334,6 @@ fun HomeScreen(
                     ),
                 )
               }
-              // Box: Chat History drawer item
-              Spacer(modifier = Modifier.height(16.dp))
-              Row(modifier = Modifier.fillMaxWidth()) {
-                SquareDrawerItem(
-                  label = "Chat History",
-                  description = "View saved conversations",
-                  icon = Icons.Rounded.Forum,
-                  onClick = {
-                    scope.launch { drawerState.close() }
-                    scope.launch {
-                      delay(50)
-                      navigateToChatHistory()
-                    }
-                  },
-                  modifier = Modifier.weight(1f),
-                  iconBrush =
-                    linearGradient(
-                      colors =
-                        listOf(
-                          MaterialTheme.customColors.taskBgGradientColors[0][0],
-                          MaterialTheme.customColors.taskBgGradientColors[0][1],
-                        )
-                    ),
-                )
-                Spacer(modifier = Modifier.weight(1f))
-              }
             }
           }
         },
@@ -476,6 +457,61 @@ fun HomeScreen(
                   IntroText(enableAnimation = enableAnimation, gm4 = gm4)
                   if (gm4) {
                     TryGm4IntroText(enableAnimation = enableAnimation)
+                  }
+                }
+
+                // Quick-action buttons row.
+                Row(
+                  modifier = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min)
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 16.dp),
+                  horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                  FilledTonalButton(
+                    onClick = onNewChatClicked,
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                  ) {
+                    Icon(
+                      Icons.Rounded.AddComment,
+                      contentDescription = null,
+                      modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("New Chat", maxLines = 1)
+                  }
+                  FilledTonalButton(
+                    onClick = navigateToChatHistory,
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                  ) {
+                    Icon(
+                      Icons.Rounded.Forum,
+                      contentDescription = null,
+                      modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("History", maxLines = 1)
+                  }
+                  FilledTonalButton(
+                    onClick = onImportModelClicked,
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                  ) {
+                    Icon(
+                      Icons.Rounded.FolderOpen,
+                      contentDescription = null,
+                      modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Column {
+                      Text("Import", maxLines = 1)
+                      Text(
+                        "GGUF · LiteRT",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                      )
+                    }
                   }
                 }
 
@@ -790,41 +826,6 @@ private fun TaskList(
     // Use 5 iterations to make sure all visible task cards are animated.
     delay(((TASK_CARD_ANIMATION_DURATION + TASK_CARD_ANIMATION_DELAY_OFFSET) * 5).toLong())
     initialAnimationDone = true
-  }
-
-  // The highlighted tiles at the top.
-  if (gm4) {
-    Column(
-      verticalArrangement = Arrangement.spacedBy(10.dp),
-      modifier =
-        Modifier.padding(horizontal = 24.dp).graphicsLayer {
-          alpha = progress
-          translationY = (CONTENT_COMPOSABLES_OFFSET_Y.dp * (1 - progress)).toPx()
-        },
-    ) {
-      val chatToDescription =
-        mapOf(
-          BuiltInTaskId.LLM_CHAT to "Chat with the latest Gemma 4 model today",
-          // use "\u00a0" to make sure the word before and after it should always be together when
-          // wrapping lines.
-          BuiltInTaskId.LLM_AGENT_CHAT to "Have Gemma 4 complete agentic tasks for\u00A0you",
-        )
-      for (task in
-        listOf(
-          modelManagerViewModel.getTaskById(BuiltInTaskId.LLM_CHAT)!!,
-          modelManagerViewModel.getTaskById(BuiltInTaskId.LLM_AGENT_CHAT)!!,
-        )) {
-        TaskCard(
-          task = task,
-          index = 0,
-          animate = !initialAnimationDone && enableAnimation,
-          onClick = { navigateToTaskScreen(task) },
-          modifier = Modifier.fillMaxWidth(),
-          description = chatToDescription[task.id]!!,
-        )
-      }
-
-          }
   }
 
   HorizontalPager(

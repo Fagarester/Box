@@ -140,6 +140,7 @@ fun AgentChatScreen(
     modelManagerViewModel = modelManagerViewModel,
     taskId = BuiltInTaskId.LLM_AGENT_CHAT,
     navigateUp = navigateUp,
+    autoResumeConversation = false,
     onFirstToken = { model ->
       updateProgressPanel(viewModel = viewModel, model = model, agentTools = agentTools)
     },
@@ -342,100 +343,96 @@ fun AgentChatScreen(
         },
       )
     },
-    emptyStateComposable = { model ->
+    emptyStateComposable = { _ ->
+      AnimatedVisibility(
+        !WindowInsets.isImeVisible,
+        enter = fadeIn(animationSpec = tween(200)),
+        exit = fadeOut(animationSpec = tween(200)),
+      ) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+          Column(
+            modifier =
+              Modifier.align(Alignment.Center)
+                .padding(horizontal = 48.dp)
+                .padding(bottom = 48.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+          ) {
+            Text(
+              stringResource(R.string.introducing),
+              style = MaterialTheme.typography.headlineSmall,
+            )
+            Text(
+              stringResource(R.string.agent_skills),
+              style =
+                MaterialTheme.typography.headlineLarge.copy(
+                  fontWeight = FontWeight.Medium,
+                  brush =
+                    Brush.linearGradient(colors = listOf(Color(0xFF85B1F8), Color(0xFF3174F1))),
+                ),
+              modifier = Modifier.padding(top = 12.dp, bottom = 16.dp),
+            )
+            Text(
+              buildAnnotatedString {
+                append("Use specialized, high-order reasoning by loading different skills or ")
+                append(
+                  buildTrackableUrlAnnotatedString(
+                    url = "https://github.com/google-ai-edge/gallery/tree/main/skills",
+                    linkText = "creating\u00A0your\u00A0own",
+                  )
+                )
+                append(".\n\nTry tapping a sample prompt below to see Agent Skills in action!")
+              },
+              style =
+                MaterialTheme.typography.headlineSmall.copy(fontSize = 16.sp, lineHeight = 22.sp),
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+              textAlign = TextAlign.Center,
+            )
+          }
+        }
+      }
+    },
+    aboveInputComposable = { model ->
       val uiState by viewModel.uiState.collectAsState()
       val modelManagerUiState by modelManagerViewModel.uiState.collectAsState()
       val modelInitializationStatus = modelManagerUiState.modelInitializationStatus[model.name]
-      Box(modifier = Modifier.fillMaxSize()) {
-        AnimatedVisibility(
-          !WindowInsets.isImeVisible,
-          enter = fadeIn(animationSpec = tween(200)),
-          exit = fadeOut(animationSpec = tween(200)),
-        ) {
-          Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Column(
-              modifier =
-                Modifier.align(Alignment.Center)
-                  .padding(horizontal = 48.dp)
-                  .padding(bottom = 48.dp),
-              horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-              Text(
-                stringResource(R.string.introducing),
-                style = MaterialTheme.typography.headlineSmall,
-              )
-              Text(
-                stringResource(R.string.agent_skills),
-                style =
-                  MaterialTheme.typography.headlineLarge.copy(
-                    fontWeight = FontWeight.Medium,
-                    brush =
-                      Brush.linearGradient(colors = listOf(Color(0xFF85B1F8), Color(0xFF3174F1))),
-                  ),
-                modifier = Modifier.padding(top = 12.dp, bottom = 16.dp),
-              )
-              Text(
-                buildAnnotatedString {
-                  append("Use specialized, high-order reasoning by loading different skills or ")
-                  append(
-                    buildTrackableUrlAnnotatedString(
-                      url = "https://github.com/google-ai-edge/gallery/tree/main/skills",
-                      linkText = "creating\u00A0your\u00A0own",
-                    )
+      Row(
+        modifier =
+          Modifier.horizontalScroll(rememberScrollState())
+            .padding(horizontal = 12.dp)
+            .padding(bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+      ) {
+        for (promptChip in TRYOUT_CHIPS) {
+          FilledTonalButton(
+            enabled =
+              modelInitializationStatus?.status == ModelInitializationStatusType.INITIALIZED &&
+                !uiState.isResettingSession,
+            onClick = {
+              if (skillManagerViewModel.isSkillSelected(promptChip.skillName)) {
+                sendMessageTrigger =
+                  SendMessageTrigger(
+                    model = model,
+                    messages =
+                      listOf(ChatMessageText(content = promptChip.prompt, side = ChatSide.USER)),
                   )
-                  append(".\n\nTry tapping a sample prompt below to see Agent Skills in action!")
-                },
-                style =
-                  MaterialTheme.typography.headlineSmall.copy(fontSize = 16.sp, lineHeight = 22.sp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-              )
-            }
-          }
-        }
-
-        Row(
-          modifier =
-            Modifier.align(Alignment.BottomCenter)
-              .horizontalScroll(rememberScrollState())
-              .padding(horizontal = 12.dp),
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-          for (promptChip in TRYOUT_CHIPS) {
-            FilledTonalButton(
-              enabled =
-                modelInitializationStatus?.status == ModelInitializationStatusType.INITIALIZED &&
-                  !uiState.isResettingSession,
-              onClick = {
-                // Skill is selected, trigger sending the message.
-                if (skillManagerViewModel.isSkillSelected(promptChip.skillName)) {
-                  sendMessageTrigger =
-                    SendMessageTrigger(
-                      model = model,
-                      messages =
-                        listOf(ChatMessageText(content = promptChip.prompt, side = ChatSide.USER)),
-                    )
-                  firebaseAnalytics?.logEvent(
-                    GalleryEvent.BUTTON_CLICKED.id,
-                    Bundle().apply {
-                      putString("event_type", "agent_skills_prompt_chip")
-                      putString("button_id", promptChip.label)
-                    },
-                  )
-                }
-                // Skill is not selected, show alert dialog.
-                else {
-                  disabledSkillName = promptChip.skillName
-                  showAlertForDisabledSkill = true
-                }
-              },
-              contentPadding = PaddingValues(horizontal = 12.dp),
-            ) {
-              Icon(promptChip.icon, contentDescription = null, modifier = Modifier.size(20.dp))
-              Spacer(modifier = Modifier.width(4.dp))
-              Text(promptChip.label)
-            }
+                firebaseAnalytics?.logEvent(
+                  GalleryEvent.BUTTON_CLICKED.id,
+                  Bundle().apply {
+                    putString("event_type", "agent_skills_prompt_chip")
+                    putString("button_id", promptChip.label)
+                  },
+                )
+              } else {
+                disabledSkillName = promptChip.skillName
+                showAlertForDisabledSkill = true
+              }
+            },
+            contentPadding = PaddingValues(horizontal = 12.dp),
+          ) {
+            Icon(promptChip.icon, contentDescription = null, modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(promptChip.label)
           }
         }
       }

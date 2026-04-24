@@ -1,10 +1,24 @@
 <img src="https://raw.githubusercontent.com/jegly/Box/main/images/box-header.svg" alt="Box Header" width="800" />
 
+[![Kotlin](https://img.shields.io/badge/Kotlin-90.4%25-6272A4.svg?logo=kotlin&logoColor=white)](https://kotlinlang.org)
+[![Android](https://img.shields.io/badge/Android-16%2B-50FA7B.svg?logo=android&logoColor=white)](https://developer.android.com)
+[![Version](https://img.shields.io/badge/Version-1.0.12-BD93F9.svg)](https://github.com/jegly/Box/releases)
+[![License](https://img.shields.io/badge/License-Apache%202.0-8BE9FD.svg)](LICENSE)
+[![llama.cpp](https://img.shields.io/badge/llama.cpp-GGUF-FFB86C.svg)](https://github.com/ggerganov/llama.cpp)
+[![stable-diffusion.cpp](https://img.shields.io/badge/stable--diffusion.cpp-GGUF-FFB86C.svg)](https://github.com/leejet/stable-diffusion.cpp)
+[![whisper.cpp](https://img.shields.io/badge/whisper.cpp-STT-FFB86C.svg)](https://github.com/ggerganov/whisper.cpp)
+[![LiteRT](https://img.shields.io/badge/LiteRT-NPU-FF79C6.svg)](https://ai.google.dev/edge/litert)
+[![Snapdragon NPU](https://img.shields.io/badge/Snapdragon-NPU%208Gen2%2F3%2FElite-FF79C6.svg)](https://www.qualcomm.com/products/mobile/snapdragon)
+[![Google Tensor](https://img.shields.io/badge/Google%20Tensor-TPU%20G3%2FG4%2FG5%20(Pixel%208--10)-FF79C6.svg)](https://store.google.com/gb/category/phones)
+[![MediaTek](https://img.shields.io/badge/MediaTek-NPU-FF79C6.svg)](https://www.mediatek.com/)
+[![SQLCipher](https://img.shields.io/badge/SQLCipher-AES--256-F1FA8C.svg?logo=sqlite&logoColor=white)](https://www.zetetic.net/sqlcipher/)
+[![Biometric](https://img.shields.io/badge/Biometric-Lock-FF5555.svg?logo=fingerprint&logoColor=white)]()
+[![Offline](https://img.shields.io/badge/Network-Hard%20Offline-FF5555.svg)]()
+[![GGUF Import](https://img.shields.io/badge/GGUF-Import-50FA7B.svg)]()
+[![Hybrid Engine](https://img.shields.io/badge/Engine-LiteRT%20%2B%20llama.cpp-BD93F9.svg)]()
+[![Fork](https://img.shields.io/badge/Fork-Google%20AI%20Edge-6272A4.svg)](https://github.com/google-ai-edge/gallery)
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Upstream](https://img.shields.io/badge/upstream-google--ai--edge%2Fgallery-brightgreen)](https://github.com/google-ai-edge/gallery)
-
-**A security-hardened fork of [Google AI Edge Gallery](https://github.com/google-ai-edge/gallery) — with biometric lock, encrypted chat history, llama.cpp support, and GGUF model import.**
+**A security-hardened fork of [Google AI Edge Gallery](https://github.com/google-ai-edge/gallery) — with on-device image generation, voice input, document analysis, vision AI, biometric lock, encrypted chat history, llama.cpp support, and GGUF model import.**
 
 ## Disclaimer
 
@@ -29,59 +43,133 @@ This project (`Box`) forks Google's AI Edge Gallery to create a **hybrid LiteRT 
 
 ## What is Box?
 
-Box is an Android app for running large language models entirely on-device. It inherits the full feature set of the upstream Google AI Edge Gallery and adds a security-focused layer on top: your conversations are encrypted at rest, the app can lock behind biometrics, and a hard offline mode blocks all network traffic on demand.
+Box is an Android app for running AI entirely on-device — chat, image generation, speech-to-text, document analysis, and vision, all without a network connection. It inherits the full feature set of the upstream Google AI Edge Gallery and layers on top: encrypted conversations, biometric lock, hard offline mode, and three additional native inference engines (llama.cpp, stable-diffusion.cpp, whisper.cpp) alongside LiteRT.
 
-On the inference side, Box integrates llama.cpp alongside the upstream LiteRT runtime. This lets you sideload any GGUF model file and choose between CPU, GPU, or NPU acceleration per model — so you are not limited to the curated model list.
+# Box: On-Device AI. No Cloud. No Compromise.
+
+**What makes Box unique?** While other on-device AI apps focus on a single capability, Box ships four inference engines in one APK — text, image generation, speech-to-text, and vision — all running locally with no data leaving your device.
 
 ---
 
-## What's different from upstream
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center"><img src="images/Box_Screenshots/LandingPage.png" width="210"/><br/><sub>Home</sub></td>
+    <td align="center"><img src="images/Box_Screenshots/AI_Chat_Example.png" width="210"/><br/><sub>AI Chat</sub></td>
+    <td align="center"><img src="images/Box_Screenshots/Ai_Chat_Input_Select.png" width="210"/><br/><sub>Multimodal Input</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="images/Box_Screenshots/Ask_Image.png" width="210"/><br/><sub>Vision AI</sub></td>
+    <td align="center"><img src="images/Box_Screenshots/VoiceInput.png" width="210"/><br/><sub>Voice Input</sub></td>
+    <td align="center"><img src="images/Box_Screenshots/Audio_Scribe.png" width="210"/><br/><sub>Audio Scribe</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="images/Box_Screenshots/Whisper.png" width="210"/><br/><sub>Whisper STT</sub></td>
+    <td align="center"><img src="images/Box_Screenshots/LiteRT_backend_Voice.png" width="210"/><br/><sub>LiteRT Voice Backend</sub></td>
+    <td align="center"><img src="images/Box_Screenshots/ImgGen_Overview.png" width="210"/><br/><sub>Image Generation</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="images/Box_Screenshots/ImgGen.png" width="210"/><br/><sub>Diffusion Output</sub></td>
+    <td align="center"><img src="images/Box_Screenshots/IMGGen_Photo_example.png" width="210"/><br/><sub>Photo Generation</sub></td>
+    <td align="center"><img src="images/Box_Screenshots/Mobile_Actions_Automation.png" width="210"/><br/><sub>Mobile Actions</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="images/Box_Screenshots/Agent_Skills.png" width="210"/><br/><sub>Agent Skills</sub></td>
+    <td align="center"><img src="images/Box_Screenshots/Prompt_Lab.png" width="210"/><br/><sub>Prompt Lab</sub></td>
+    <td align="center"><img src="images/Box_Screenshots/Model_Configuration.png" width="210"/><br/><sub>Model Config</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="images/Box_Screenshots/Model_Select.png" width="210"/><br/><sub>Model Select</sub></td>
+    <td align="center"><img src="images/Box_Screenshots/Settings.png" width="210"/><br/><sub>Settings</sub></td>
+    <td></td>
+  </tr>
+</table>
+
+---
+
+## Why This Matters
+
+| Feature | Google AI Edge Gallery | llama.cpp-only apps | **Box** |
+|---------|----------------------|--------------------------------|------------------------|
+| LiteRT + GPU acceleration | ✅ | ❌ | ✅ |
+| Snapdragon NPU (8 Gen 2/3/Elite) | APK per SoC | ❌ | ✅ bundled |
+| Google Tensor TPU (Pixel 8–10) | APK per device | ❌ | ✅ bundled |
+| MediaTek NPU | APK per device | ❌ | ✅ bundled |
+| Import any GGUF model | ❌ | ✅ | ✅ |
+| On-device image generation | ❌ | ❌ | ✅ |
+| On-device speech-to-text | ❌ | ❌ | ✅ |
+| Document analysis in chat | ❌ | ❌ | ✅ |
+| Vision + audio in main chat | ❌ | ❌ | ✅ |
+| Encrypted chat history | ❌ | ❌ | ✅ |
+| Biometric app lock | ❌ | ❌ | ✅ |
+| Hard offline mode (airgap) | ❌ | ❌ | ✅ |
+
+---
+
+## What's Different from Upstream
 
 | Area | Upstream (Google AI Edge Gallery) | Box |
 |---|---|---|
-| Chat history | In-memory only (lost on close) | Persisted to SQLCipher-encrypted Room DB |
-| App lock | None | Optional biometric lock (fingerprint / face) on foreground |
-| Offline mode | Always online | Hard offline switch — blocks all network requests |
-| Inference engine | LiteRT only | LiteRT + llama.cpp |
+| Chat history | In-memory only | Persisted to SQLCipher-encrypted Room DB |
+| App lock | None | Optional biometric lock on every foreground |
+| Offline mode | Always online | Hard offline switch |
+| Inference engine | LiteRT only | LiteRT + llama.cpp + stable-diffusion.cpp + whisper.cpp |
 | Model import | Download from allowlist | Import local GGUF files |
-| Accelerator | Per-model default | User-selectable CPU / GPU / NPU at import time |
+| Image generation | None | On-device Stable Diffusion via GGUF |
+| Speech-to-text | None | On-device Whisper STT |
+| Document analysis | None | Attach and analyse text files in chat |
+| Vision in main chat | Separate tab only | Enabled in AI Chat for multimodal models |
+| Audio in main chat | Separate tab only | Enabled in AI Chat for multimodal models |
+| NPU / TPU support | Separate APK per SoC | All SoC variants bundled in one APK |
+| Accelerator | Per-model default | User-selectable CPU / GPU / NPU |
 | Security audit log | None | On-device log of security-relevant events |
-| Prompt sanitisation | None | Input sanitised before inference and persistence |
 | Chat resume | None | Conversations resume where you left off |
 
 ---
 
 ## Core Features
 
-**Biometric App Lock**
+### Local Chat
+Multi-turn conversations with on-device LLMs. Import any GGUF model or download LiteRT models from the built-in list. Supports Thinking Mode on compatible models. Full markdown rendering. Conversations are persisted and resumable.
+
+With **Gemma 4 E2B / E4B** selected, the chat input expands to a full multimodal interface:
+- 📎 Attach documents (`.txt`, `.md`, `.csv`, `.json`, `.py`, `.kt`, and more) — content is injected into context automatically
+- 🎙 Record an audio clip or pick a WAV file to speak your question
+- 📷 Take a photo or pick from album for visual Q&A
+
+### Local Diffusion
+On-device image generation powered by [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp). Runs Stable Diffusion 1.5 in GGUF format fully offline — no API key, no cloud. Configurable steps, CFG scale, seed, and image size presets. Save generated images directly to your gallery. Import your own GGUF diffusion models.
+
+### Voice Input
+On-device speech-to-text using [whisper.cpp](https://github.com/ggerganov/whisper.cpp). Tap to record, tap to transcribe. Copy or clear results. Supports Whisper Tiny through Small models in multiple languages. Audio never leaves the device.
+
+### Vision AI
+Ask questions about images using on-device vision models. Powered by LiteRT with Gemma 4 E2B / E4B — GPU-accelerated, up to 32K context.
+
+### Biometric App Lock
 Enable an optional biometric lock from Settings. The app re-locks automatically every time it is backgrounded. Unlock via fingerprint or face authentication before any content is shown.
 
-**Encrypted Chat History**
-All conversations are stored in a SQLCipher-encrypted Room database. History persists across sessions and is resumable from the Chat History screen in the drawer. Swipe to delete individual conversations, or delete all at once.
+### Encrypted Chat History
+All conversations are stored in a SQLCipher-encrypted Room database. History persists across sessions and is resumable from the Chat History screen. Swipe to delete individual conversations, or wipe all at once.
 
-**llama.cpp Engine**
-Runs GGUF models natively via a bundled llama.cpp submodule. Supports the full range of quantised model formats (Q4_K_M, Q5_K_M, Q8_0, F16, etc.).
+### NPU / TPU Acceleration
+All Qualcomm Hexagon NPU variants (Snapdragon 8 Gen 2 / 8 Gen 3 / 8 Elite / newer), Google Tensor TPU (Pixel 8–10), and MediaTek NPU are bundled in a single APK — no separate builds per device. Select **NPU** in the model's accelerator dropdown; Box auto-detects the chip and loads the right runtime. Uses LiteRT JIT compilation on-device, so no pre-compiled model files are needed.
 
-**GGUF Model Import**
-Import any GGUF model file from local storage. At import time you can set the display name and choose the accelerator (CPU, GPU via OpenCL/Vulkan, or NPU via QNN delegate).
+Supported hardware:
+- **Snapdragon 8 Gen 2** (SM8550, Hexagon V69)
+- **Snapdragon 8 Gen 3** (SM8650, Hexagon V73)
+- **Snapdragon 8 Elite** (SM8750, Hexagon V75)
+- **Snapdragon 8 Elite for Galaxy** (SM8850, Hexagon V79)
+- **Snapdragon next-gen** (Hexagon V81)
+- **Google Tensor G3 / G4 / G5** (Pixel 8 / 9 / 10)
+- **MediaTek Dimensity** (MT6989, MT6991)
 
-**Accelerator Selection**
-Each model can run on CPU, GPU, or NPU independently. The choice is stored per model and used for every inference session.
+### GGUF Model Import
+Import any GGUF model file from local storage. At import time set the display name and choose the accelerator (CPU, GPU via OpenCL/Vulkan, or NPU via QNN delegate). Stable Diffusion GGUF models can also be imported for image generation.
 
-**Hard Offline Mode**
-A toggle in Settings forces the app into a fully airgapped state — all download attempts throw an exception and no network calls are made. Useful in sensitive environments.
-
-**AI Chat** (from upstream)
-Multi-turn conversations with on-device LLMs. Supports Thinking Mode on compatible models (Gemma 4 family). Full markdown rendering of responses.
-
-**Ask Image / Audio Scribe** (from upstream)
-Multimodal image Q&A and audio transcription using on-device models.
-
-**Agent Skills** (from upstream)
-Augment the model with tool use: Wikipedia, maps, visual cards, and community-contributed skill packs loadable from a URL.
-
-**Prompt Lab** (from upstream)
-Single-turn prompt sandbox with temperature, top-k, and other parameter controls.
+### Hard Offline Mode
+A toggle in Settings forces the app into a fully airgapped state — all download attempts throw an exception and no network calls are made.
 
 ---
 
@@ -89,7 +177,7 @@ Single-turn prompt sandbox with temperature, top-k, and other parameter controls
 
 ### Requirements
 
-- Android 16+ or higher
+- Android 16+
 - ~4 GB of free storage for a typical quantised LLM
 
 ### Build from source
@@ -100,17 +188,17 @@ cd box/Android
 ./gradlew :app:assembleDebug
 ```
 
-The `--recurse-submodules` flag is required to pull the llama.cpp submodule.
+The `--recurse-submodules` flag is required to pull llama.cpp, stable-diffusion.cpp, and whisper.cpp submodules. The first build compiles all three native libraries from source — expect 15–25 minutes. Subsequent builds are fast.
 
 Open `Android/` in Android Studio (Ladybug or newer) and run on a physical device for best performance.
 
 ### Loading a GGUF model
 
-1. Copy a `.gguf` file to your device (Downloads folder, USB, etc.)
-2. Open the app and tap **Model Manager** in the drawer
+1. Copy a `.gguf` file to your device (Downloads, USB, etc.)
+2. Open the app → **Model Manager** in the drawer
 3. Tap **Import** and pick your file
 4. Set a display name and choose CPU / GPU / NPU
-5. Tap **Import** — the model appears in the AI Chat task
+5. The model appears in AI Chat
 
 ---
 
@@ -120,7 +208,7 @@ Open `Android/` in Android Studio (Ladybug or newer) and run on a physical devic
 |---|---|
 | Database encryption | SQLCipher via `androidx.room` — AES-256 at rest |
 | Biometric gate | `BiometricPrompt` API, re-prompts on each foreground |
-| Offline mode | `OfflineMode` singleton blocks `DownloadWorker` and `OkHttp` calls |
+| Offline mode | `OfflineMode` singleton blocks `DownloadWorker` and network calls |
 | Prompt sanitisation | `SecurityUtils.sanitizePrompt()` strips control characters before inference and persistence |
 | Tapjacking protection | `filterTouchesWhenObscured` set on the chat scaffold |
 | Audit log | `SecurityAuditLog` writes security events to a local append-only log |
@@ -132,16 +220,19 @@ Open `Android/` in Android Studio (Ladybug or newer) and run on a physical devic
 - **Kotlin + Jetpack Compose** — UI
 - **Hilt** — dependency injection
 - **Room + SQLCipher** — encrypted persistence
-- **LiteRT (TFLite)** — upstream inference runtime
-- **llama.cpp** — GGUF inference (bundled as a git submodule)
-- **Firebase Analytics** — anonymous usage stats (can be disabled via Offline Mode)
----
+- **LiteRT-LM** — LiteRT inference runtime for LLMs (GPU + NPU/TPU)
+- **Qualcomm QNN / QAIRT 2.41** — Hexagon NPU runtime (V69–V81, bundled)
+- **LiteRT NPU dispatch** — auto-selects Qualcomm / Google Tensor / MediaTek at runtime
+- **llama.cpp** — GGUF LLM inference (git submodule)
+- **stable-diffusion.cpp** — GGUF image generation (git submodule)
+- **whisper.cpp** — on-device speech-to-text (git submodule)
+- **Firebase Analytics** — anonymous usage stats (disabled in Offline Mode)
 
 ---
 
 ## Upstream
 
-This project is a fork of [google-ai-edge/gallery](https://github.com/google-ai-edge/gallery). Upstream improvements are periodically merged. The upstream app is available on [Google Play](https://play.google.com/store/apps/details?id=com.google.ai.edge.gallery) and the [App Store](https://apps.apple.com/us/app/google-ai-edge-gallery/id6749645337).
+This project is a fork of [google-ai-edge/gallery](https://github.com/google-ai-edge/gallery). Upstream improvements are periodically merged.
 
 ---
 
@@ -156,5 +247,9 @@ Licensed under the Apache License, Version 2.0. See the [LICENSE](LICENSE) file 
 - [Box repository](https://github.com/jegly/box)
 - [Upstream: google-ai-edge/gallery](https://github.com/google-ai-edge/gallery)
 - [llama.cpp](https://github.com/ggml-org/llama.cpp)
+- [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp)
+- [whisper.cpp](https://github.com/ggerganov/whisper.cpp)
 - [LiteRT-LM](https://github.com/google-ai-edge/LiteRT-LM)
+- [LiteRT NPU docs](https://ai.google.dev/edge/litert/next/litert_lm_npu)
+- [Qualcomm QAIRT SDK](https://softwarecenter.qualcomm.com)
 - [Hugging Face LiteRT Community](https://huggingface.co/litert-community)

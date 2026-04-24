@@ -56,11 +56,18 @@ import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Article
+import androidx.compose.material.icons.outlined.Alarm
+import androidx.compose.material.icons.outlined.Bluetooth
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.FlashlightOn
+import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.PersonAdd
+import androidx.compose.material.icons.outlined.Phone
+import androidx.compose.material.icons.outlined.Sms
+import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material.icons.outlined.VolumeUp
 import androidx.compose.material.icons.outlined.Wifi
 import androidx.compose.material.icons.rounded.Functions
 import androidx.compose.material3.AlertDialog
@@ -170,6 +177,34 @@ private val PROMPT_TEMPLATES =
       labelResId = R.string.prompt_template_label_open_wifi_settings,
       prompt = "Open WIFI settings",
     ),
+    PromptTemplate(
+      labelResId = R.string.prompt_template_label_set_alarm,
+      prompt = "Set an alarm for 7:30am",
+    ),
+    PromptTemplate(
+      labelResId = R.string.prompt_template_label_set_timer,
+      prompt = "Set a 5 minute timer",
+    ),
+    PromptTemplate(
+      labelResId = R.string.prompt_template_label_dial_number,
+      prompt = "Call 555-123-4567",
+    ),
+    PromptTemplate(
+      labelResId = R.string.prompt_template_label_send_sms,
+      prompt = "Text 555-123-4567 saying I'm on my way",
+    ),
+    PromptTemplate(
+      labelResId = R.string.prompt_template_label_open_url,
+      prompt = "Open google.com in the browser",
+    ),
+    PromptTemplate(
+      labelResId = R.string.prompt_template_label_open_bluetooth_settings,
+      prompt = "Open Bluetooth settings",
+    ),
+    PromptTemplate(
+      labelResId = R.string.prompt_template_label_open_sound_settings,
+      prompt = "Open sound settings",
+    ),
   )
 
 private data class SampleActionItem(@StringRes val labelResId: Int, val icon: ImageVector)
@@ -199,6 +234,34 @@ private val SAMPLE_ACTION_ITEMS =
     SampleActionItem(
       labelResId = R.string.prompt_template_label_open_wifi_settings,
       icon = Icons.Outlined.Wifi,
+    ),
+    SampleActionItem(
+      labelResId = R.string.prompt_template_label_set_alarm,
+      icon = Icons.Outlined.Alarm,
+    ),
+    SampleActionItem(
+      labelResId = R.string.prompt_template_label_set_timer,
+      icon = Icons.Outlined.Timer,
+    ),
+    SampleActionItem(
+      labelResId = R.string.prompt_template_label_dial_number,
+      icon = Icons.Outlined.Phone,
+    ),
+    SampleActionItem(
+      labelResId = R.string.prompt_template_label_send_sms,
+      icon = Icons.Outlined.Sms,
+    ),
+    SampleActionItem(
+      labelResId = R.string.prompt_template_label_open_url,
+      icon = Icons.Outlined.Language,
+    ),
+    SampleActionItem(
+      labelResId = R.string.prompt_template_label_open_bluetooth_settings,
+      icon = Icons.Outlined.Bluetooth,
+    ),
+    SampleActionItem(
+      labelResId = R.string.prompt_template_label_open_sound_settings,
+      icon = Icons.Outlined.VolumeUp,
     ),
   )
 

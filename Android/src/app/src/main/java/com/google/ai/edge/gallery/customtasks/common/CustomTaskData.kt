@@ -46,4 +46,5 @@ data class CustomTaskDataForBuiltinTask(
   val modelManagerViewModel: ModelManagerViewModel,
   val onNavUp: () -> Unit,
   val conversationId: String? = null,
+  val autoResumeConversation: Boolean = true,
 )

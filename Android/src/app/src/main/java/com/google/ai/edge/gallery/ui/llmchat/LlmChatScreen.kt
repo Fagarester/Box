@@ -22,11 +22,16 @@ import android.graphics.Bitmap
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -37,6 +42,7 @@ import androidx.core.os.bundleOf
 import com.google.ai.edge.gallery.GalleryEvent
 import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.data.BuiltInTaskId
+import com.google.ai.edge.gallery.data.ConfigKeys
 import com.google.ai.edge.gallery.data.Model
 import com.google.ai.edge.gallery.data.RuntimeType
 import com.google.ai.edge.gallery.data.Task
@@ -44,6 +50,7 @@ import com.google.ai.edge.gallery.firebaseAnalytics
 import com.google.ai.edge.gallery.ui.common.chat.ChatMessageAudioClip
 import com.google.ai.edge.gallery.ui.common.chat.ChatMessageImage
 import com.google.ai.edge.gallery.ui.common.chat.ChatMessageText
+import com.google.ai.edge.gallery.ui.common.chat.ChatMessageType
 import com.google.ai.edge.gallery.ui.common.chat.ChatView
 import com.google.ai.edge.gallery.ui.common.chat.SendMessageTrigger
 import com.google.ai.edge.gallery.ui.modelmanager.ModelManagerViewModel
@@ -68,10 +75,12 @@ fun LlmChatScreen(
   curSystemPrompt: String = "",
   onSystemPromptChanged: (String) -> Unit = {},
   emptyStateComposable: @Composable (Model) -> Unit = {},
+  aboveInputComposable: @Composable (Model) -> Unit = {},
   sendMessageTrigger: SendMessageTrigger? = null,
   showImagePicker: Boolean = false,
   showAudioPicker: Boolean = false,
   conversationId: String? = null,
+  autoResumeConversation: Boolean = true,
 ) {
   ChatViewWrapper(
     viewModel = viewModel,
@@ -88,10 +97,12 @@ fun LlmChatScreen(
     curSystemPrompt = curSystemPrompt,
     onSystemPromptChanged = onSystemPromptChanged,
     emptyStateComposable = emptyStateComposable,
+    aboveInputComposable = aboveInputComposable,
     sendMessageTrigger = sendMessageTrigger,
     showImagePicker = showImagePicker,
     showAudioPicker = showAudioPicker,
     conversationId = conversationId,
+    autoResumeConversation = autoResumeConversation,
   )
 }
 
@@ -183,6 +194,7 @@ fun ChatViewWrapper(
   onResetSessionClickedOverride: ((Task, Model) -> Unit)? = null,
   composableBelowMessageList: @Composable (Model) -> Unit = {},
   emptyStateComposable: @Composable (Model) -> Unit = {},
+  aboveInputComposable: @Composable (Model) -> Unit = {},
   allowEditingSystemPrompt: Boolean = false,
   curSystemPrompt: String = "",
   onSystemPromptChanged: (String) -> Unit = {},
@@ -190,10 +202,19 @@ fun ChatViewWrapper(
   showImagePicker: Boolean = false,
   showAudioPicker: Boolean = false,
   conversationId: String? = null,
+  autoResumeConversation: Boolean = true,
 ) {
   val context = LocalContext.current
   val task = modelManagerViewModel.getTaskById(id = taskId)!!
   val allowThinking = task.allowThinking()
+
+  // Wire per-conversation system prompt from viewModel state.
+  val vmSystemPrompt by viewModel.currentSystemPrompt.collectAsState()
+  val effectiveCurSystemPrompt = vmSystemPrompt.ifEmpty { curSystemPrompt }
+  val effectiveOnSystemPromptChanged: (String) -> Unit = { sp ->
+    viewModel.updateSystemPrompt(sp)
+    onSystemPromptChanged(sp)
+  }
 
   ChatView(
     task = task,
@@ -286,11 +307,66 @@ fun ChatViewWrapper(
     composableBelowMessageList = composableBelowMessageList,
     showImagePicker = showImagePicker,
     emptyStateComposable = emptyStateComposable,
+    aboveInputComposable = { model ->
+      ContextWindowIndicator(model = model, viewModel = viewModel)
+      aboveInputComposable(model)
+    },
     allowEditingSystemPrompt = allowEditingSystemPrompt,
-    curSystemPrompt = curSystemPrompt,
-    onSystemPromptChanged = onSystemPromptChanged,
+    curSystemPrompt = effectiveCurSystemPrompt,
+    onSystemPromptChanged = effectiveOnSystemPromptChanged,
     sendMessageTrigger = sendMessageTrigger,
     showAudioPicker = showAudioPicker,
     conversationId = conversationId,
+    autoResumeConversation = autoResumeConversation,
   )
+}
+
+@Composable
+private fun ContextWindowIndicator(model: Model, viewModel: LlmChatViewModelBase) {
+  val uiState by viewModel.uiState.collectAsState()
+  val messages = uiState.messagesByModel[model.name] ?: return
+
+  val totalChars = messages
+    .filter { it.type == ChatMessageType.TEXT }
+    .sumOf { (it as? ChatMessageText)?.content?.length ?: 0 }
+
+  val maxTokens = model.configValues[ConfigKeys.MAX_TOKENS.label]
+    ?.toString()?.toIntOrNull()?.takeIf { it > 0 }
+    ?: model.llmMaxToken.takeIf { it > 0 }
+    ?: 1024
+  val estimatedTokens = (totalChars / 4).coerceAtMost(maxTokens)
+  val fraction = (estimatedTokens.toFloat() / maxTokens).coerceIn(0f, 1f)
+  if (estimatedTokens == 0) return
+
+  val color = when {
+    fraction > 0.85f -> MaterialTheme.colorScheme.error
+    fraction > 0.65f -> MaterialTheme.colorScheme.tertiary
+    else -> MaterialTheme.colorScheme.primary
+  }
+
+  Column(
+    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 2.dp),
+  ) {
+    LinearProgressIndicator(
+      progress = { fraction },
+      modifier = Modifier.fillMaxWidth(),
+      color = color,
+      trackColor = MaterialTheme.colorScheme.surfaceVariant,
+    )
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+      Text(
+        "Context",
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+      )
+      Text(
+        "~$estimatedTokens / $maxTokens tokens",
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+      )
+    }
+  }
 }

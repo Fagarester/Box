@@ -23,8 +23,7 @@ import com.google.ai.edge.litertlm.ToolSet
 private const val TAG = "AGMATools"
 
 class MobileActionsTools(val onFunctionCalled: (Action) -> Unit) : ToolSet {
-  /** Turns on flashlight. */
-  @Tool(description = "Turns the flashlight on")
+  @Tool(description = "Turn on flashlight")
   fun turnOnFlashlight(): Map<String, String> {
     Log.d(TAG, "turn on flashlight")
 
@@ -35,8 +34,7 @@ class MobileActionsTools(val onFunctionCalled: (Action) -> Unit) : ToolSet {
     return mapOf("result" to "success")
   }
 
-  /** Turns off flashlight. */
-  @Tool(description = "Turns the flashlight off")
+  @Tool(description = "Turn off flashlight")
   fun turnOffFlashlight(): Map<String, String> {
     Log.d(TAG, "turn off flashlight")
 
@@ -47,13 +45,12 @@ class MobileActionsTools(val onFunctionCalled: (Action) -> Unit) : ToolSet {
     return mapOf("result" to "success")
   }
 
-  /** Creates contact. */
-  @Tool(description = "Creates a contact in the phone's contact list.")
+  @Tool(description = "Add contact")
   fun createContact(
-    @ToolParam(description = "The first name of the contact.") firstName: String,
-    @ToolParam(description = "The last name of the contact.") lastName: String,
-    @ToolParam(description = "The phone number of the contact.") phoneNumber: String,
-    @ToolParam(description = "The email address of the contact.") email: String,
+    @ToolParam(description = "First name") firstName: String,
+    @ToolParam(description = "Last name") lastName: String,
+    @ToolParam(description = "Phone number") phoneNumber: String,
+    @ToolParam(description = "Email") email: String,
   ): Map<String, String> {
     Log.d(
       TAG,
@@ -78,12 +75,11 @@ class MobileActionsTools(val onFunctionCalled: (Action) -> Unit) : ToolSet {
     )
   }
 
-  /** Sends email. */
-  @Tool(description = "Sends an email.")
+  @Tool(description = "Send email")
   fun sendEmail(
-    @ToolParam(description = "The email address of the recipient.") to: String,
-    @ToolParam(description = "The subject of the email.") subject: String,
-    @ToolParam(description = "The body of the email.") body: String,
+    @ToolParam(description = "Recipient email") to: String,
+    @ToolParam(description = "Subject") subject: String,
+    @ToolParam(description = "Body") body: String,
   ): Map<String, String> {
     Log.d(TAG, "send email. To: '$to', subject: '$subject', body: '$body'")
 
@@ -92,14 +88,9 @@ class MobileActionsTools(val onFunctionCalled: (Action) -> Unit) : ToolSet {
     return mapOf("result" to "success", "to" to to, "subject" to subject, "body" to body)
   }
 
-  /** Shows location on map. */
-  @Tool(description = "Shows a location on the map.")
+  @Tool(description = "Show location on map")
   fun showLocationOnMap(
-    @ToolParam(
-      description =
-        "The location to search for. May be the name of a place, a business, or an address."
-    )
-    location: String
+    @ToolParam(description = "Place name or address") location: String
   ): Map<String, String> {
     Log.d(TAG, "Show location on map. Location: '$location'")
 
@@ -108,8 +99,7 @@ class MobileActionsTools(val onFunctionCalled: (Action) -> Unit) : ToolSet {
     return mapOf("result" to "success", "location" to location)
   }
 
-  /** Opens wifi settings. */
-  @Tool(description = "Opens the WiFi settings.")
+  @Tool(description = "Open WiFi settings")
   fun openWifiSettings(): Map<String, String> {
     Log.d(TAG, "Open wifi settings")
 
@@ -118,17 +108,95 @@ class MobileActionsTools(val onFunctionCalled: (Action) -> Unit) : ToolSet {
     return mapOf("result" to "success")
   }
 
-  /** Creates calendar events. */
-  @Tool(description = "Creates a new calendar event.")
+  @Tool(description = "Create calendar event")
   fun createCalendarEvent(
-    @ToolParam(description = "The date and time of the event in the format YYYY-MM-DDTHH:MM:SS.")
-    datetime: String,
-    @ToolParam(description = "The title of the event.") title: String,
+    @ToolParam(description = "Datetime YYYY-MM-DDTHH:MM:SS") datetime: String,
+    @ToolParam(description = "Title") title: String,
   ): Map<String, String> {
     Log.d(TAG, "Create calendar event. Datetime: '$datetime', title: '$title'")
 
     onFunctionCalled(CreateCalendarEventAction(datetime = datetime, title = title))
 
     return mapOf("result" to "success", "datetime" to datetime, "title" to title)
+  }
+
+  @Tool(description = "Set alarm")
+  fun setAlarm(
+    @ToolParam(description = "Hour 0-23") hour: Int,
+    @ToolParam(description = "Minute 0-59") minute: Int,
+    @ToolParam(description = "Label") label: String,
+  ): Map<String, String> {
+    Log.d(TAG, "Set alarm. Hour: $hour, minute: $minute, label: '$label'")
+
+    onFunctionCalled(SetAlarmAction(hour = hour, minute = minute, label = label))
+
+    return mapOf("result" to "success", "hour" to hour.toString(), "minute" to minute.toString())
+  }
+
+  @Tool(description = "Set countdown timer")
+  fun setTimer(
+    @ToolParam(description = "Duration seconds") lengthSeconds: Int,
+    @ToolParam(description = "Label") label: String,
+  ): Map<String, String> {
+    Log.d(TAG, "Set timer. Length: ${lengthSeconds}s, label: '$label'")
+
+    onFunctionCalled(SetTimerAction(lengthSeconds = lengthSeconds, label = label))
+
+    return mapOf("result" to "success", "lengthSeconds" to lengthSeconds.toString())
+  }
+
+  @Tool(description = "Dial phone number")
+  fun dialNumber(
+    @ToolParam(description = "Phone number") phoneNumber: String
+  ): Map<String, String> {
+    Log.d(TAG, "Dial number: '$phoneNumber'")
+
+    onFunctionCalled(DialNumberAction(phoneNumber = phoneNumber))
+
+    return mapOf("result" to "success", "phoneNumber" to phoneNumber)
+  }
+
+  @Tool(description = "Send SMS")
+  fun sendSms(
+    @ToolParam(description = "Phone number") phoneNumber: String,
+    @ToolParam(description = "Message") message: String,
+  ): Map<String, String> {
+    Log.d(TAG, "Send SMS. To: '$phoneNumber', message: '$message'")
+
+    onFunctionCalled(SendSmsAction(phoneNumber = phoneNumber, message = message))
+
+    return mapOf("result" to "success", "phoneNumber" to phoneNumber, "message" to message)
+  }
+
+  @Tool(description = "Open URL in browser")
+  fun openUrl(
+    @ToolParam(
+      description = "URL with scheme"
+    )
+    url: String
+  ): Map<String, String> {
+    Log.d(TAG, "Open URL: '$url'")
+
+    onFunctionCalled(OpenUrlAction(url = url))
+
+    return mapOf("result" to "success", "url" to url)
+  }
+
+  @Tool(description = "Open Bluetooth settings")
+  fun openBluetoothSettings(): Map<String, String> {
+    Log.d(TAG, "Open Bluetooth settings")
+
+    onFunctionCalled(OpenBluetoothSettingsAction())
+
+    return mapOf("result" to "success")
+  }
+
+  @Tool(description = "Open sound settings")
+  fun openSoundSettings(): Map<String, String> {
+    Log.d(TAG, "Open sound settings")
+
+    onFunctionCalled(OpenSoundSettingsAction())
+
+    return mapOf("result" to "success")
   }
 }
